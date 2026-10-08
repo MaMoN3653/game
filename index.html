@@ -122,7 +122,7 @@
 </head>
 <body>
 
-    <h1>КИРИЛЛ УБЕГАЕТ ОТ БОМЖЕЙ</h1>
+    <h1>КИРИЛЛ ПРОТИВ БОМЖЕЙ</h1>
 
     <div id="game-container">
         <div id="overlay">
@@ -164,9 +164,12 @@
         let bums = [];
         let coins = [];
 
-        // Загрузка фото Кирилла
+        // Загрузка изображений из Google Диска
         const kirillImg = new Image();
         kirillImg.src = 'https://lh3.googleusercontent.com/d/1Gw7W0toNqL4yghHQRHqzCCtmfm0y9cKu';
+
+        const bumImg = new Image();
+        bumImg.src = 'https://lh3.googleusercontent.com/d/1FsRr-sn0LJRHw-dKNYA1dlKJJc4TWQKj';
 
         // Клавиши управления
         const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
@@ -230,19 +233,18 @@
         }
 
         function spawnBum() {
-            // Спавним бомжа у краев экрана
             let x, y;
             if (Math.random() < 0.5) {
-                x = Math.random() < 0.5 ? -20 : 420;
+                x = Math.random() < 0.5 ? -25 : 425;
                 y = Math.random() * 400;
             } else {
                 x = Math.random() * 400;
-                y = Math.random() < 0.5 ? -20 : 420;
+                y = Math.random() < 0.5 ? -25 : 425;
             }
             bums.push({
                 x: x,
                 y: y,
-                size: 26,
+                size: 28,
                 speed: 1.8 + Math.random() * 0.8
             });
         }
@@ -255,7 +257,6 @@
             bums = [];
             coins = [];
             
-            // Начальные бомжи и монетки
             spawnBum();
             spawnBum();
             spawnCoin();
@@ -271,7 +272,6 @@
                 if (gameRunning) {
                     survivalTime++;
                     document.getElementById('time').innerText = survivalTime;
-                    // Каждые 10 секунд добавляем нового бомжа
                     if (survivalTime % 8 === 0) {
                         spawnBum();
                     }
@@ -282,7 +282,6 @@
         }
 
         function update() {
-            // Клавиатурное управление (если джойстик неактивен)
             if (!joystickActive) {
                 let moveX = 0;
                 let moveY = 0;
@@ -299,26 +298,22 @@
                 kirill.dy = moveY * kirill.speed;
             }
 
-            // Движение Кирилла в пределах поля
             kirill.x += kirill.dx;
             kirill.y += kirill.dy;
             kirill.x = Math.max(kirill.size/2, Math.min(canvas.width - kirill.size/2, kirill.x));
             kirill.y = Math.max(kirill.size/2, Math.min(canvas.height - kirill.size/2, kirill.y));
 
-            // Движение бомжей за Кириллом
             bums.forEach(bum => {
                 let angle = Math.atan2(kirill.y - bum.y, kirill.x - bum.x);
                 bum.x += Math.cos(angle) * bum.speed;
                 bum.y += Math.sin(angle) * bum.speed;
 
-                // Проверка столкновения Кирилла с бомжом
                 let dist = Math.hypot(kirill.x - bum.x, kirill.y - bum.y);
-                if (dist < (kirill.size/2 + bum.size/2 - 5)) {
+                if (dist < (kirill.size/2 + bum.size/2 - 6)) {
                     gameOver();
                 }
             });
 
-            // Сбор монет
             for (let i = coins.length - 1; i >= 0; i--) {
                 let c = coins[i];
                 let dist = Math.hypot(kirill.x - c.x, kirill.y - c.y);
@@ -327,7 +322,6 @@
                     document.getElementById('score').innerText = score;
                     coins.splice(i, 1);
                     spawnCoin();
-                    // Спавним нового бомжа за каждые 3 монеты для сложности
                     if (score % 30 === 0) {
                         spawnBum();
                     }
@@ -354,21 +348,28 @@
                 ctx.fillText('$', c.x, c.y);
             });
 
-            // Рисуем бомжей
+            // Рисуем бомжей (фото 2)
             bums.forEach(bum => {
-                ctx.fillStyle = '#8b5cf6';
+                ctx.save();
                 ctx.beginPath();
                 ctx.arc(bum.x, bum.y, bum.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#6d28d9';
+                ctx.clip();
+                if (bumImg.complete) {
+                    ctx.drawImage(bumImg, bum.x - bum.size, bum.y - bum.size, bum.size * 2, bum.size * 2);
+                } else {
+                    ctx.fillStyle = '#8b5cf6';
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                ctx.strokeStyle = '#ff5555';
                 ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(bum.x, bum.y, bum.size, 0, Math.PI * 2);
                 ctx.stroke();
-                // Шапка бомжа
-                ctx.fillStyle = '#374151';
-                ctx.fillRect(bum.x - bum.size/2, bum.y - bum.size - 4, bum.size, 6);
             });
 
-            // Рисуем Кирилла (большое фото)
+            // Рисуем Кирилла (фото 1)
             ctx.save();
             ctx.beginPath();
             ctx.arc(kirill.x, kirill.y, kirill.size, 0, Math.PI * 2);
@@ -381,7 +382,6 @@
             }
             ctx.restore();
 
-            // Обводка вокруг Кирилла
             ctx.strokeStyle = '#58a6ff';
             ctx.lineWidth = 3;
             ctx.beginPath();

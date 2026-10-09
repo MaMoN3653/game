@@ -1250,15 +1250,41 @@
             saveLeaderboardScore(gameState.playerName, gameState.scoreSeconds, gameState.moneyEarned);
         }
 
-        /* LEADERBOARD FIREBASE API */
+        /* LEADERBOARD FIREBASE API - UNIQUE NICKNAMES ONLY */
         function saveLeaderboardScore(name, seconds, money) {
             if (seconds <= 0) return;
-            const newRecordRef = db.ref('leaderboard').push();
-            newRecordRef.set({
-                name: name,
-                seconds: seconds,
-                money: money,
-                timestamp: Date.now()
+            
+            const leaderboardRef = db.ref('leaderboard');
+            
+            // Search if nickname already exists
+            leaderboardRef.orderByChild('name').equalTo(name).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    let existingKey = null;
+                    let existingScore = 0;
+
+                    snapshot.forEach((child) => {
+                        existingKey = child.key;
+                        existingScore = child.val().seconds || 0;
+                    });
+
+                    // Update only if new score is HIGHER
+                    if (seconds > existingScore) {
+                        leaderboardRef.child(existingKey).update({
+                            seconds: seconds,
+                            money: money,
+                            timestamp: Date.now()
+                        });
+                    }
+                } else {
+                    // Create new entry
+                    const newRecordRef = leaderboardRef.push();
+                    newRecordRef.set({
+                        name: name,
+                        seconds: seconds,
+                        money: money,
+                        timestamp: Date.now()
+                    });
+                }
             });
         }
 
@@ -1266,8 +1292,6 @@
             leaderboardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8 animate-pulse">Загрузка лучших водителей...</div>';
             
             db.ref('leaderboard')
-              .orderByChild('seconds')
-              .limitToLast(10)
               .once('value', (snapshot) => {
                   const records = [];
                   snapshot.forEach((child) => {
@@ -1277,13 +1301,16 @@
                   // Sort descending by seconds
                   records.sort((a, b) => b.seconds - a.seconds);
 
-                  if (records.length === 0) {
+                  // Keep top 10
+                  const topRecords = records.slice(0, 10);
+
+                  if (topRecords.length === 0) {
                       leaderboardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8">Пока нет сохраненных рекордов. Будь первым!</div>';
                       return;
                   }
 
                   let html = '';
-                  records.forEach((rec, idx) => {
+                  topRecords.forEach((rec, idx) => {
                       const mins = Math.floor(rec.seconds / 60).toString().padStart(2, '0');
                       const secs = (rec.seconds % 60).toString().padStart(2, '0');
                       

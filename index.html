@@ -325,10 +325,7 @@
                     <!-- Status Bar -->
                     <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent shrink-0">
                         <span>14:32</span>
-                        <div class="flex items-center gap-2">
-                            <button id="video-mute-toggle" class="text-white hover:text-yellow-400 transition-colors">
-                                <i id="video-mute-icon" class="fa-solid fa-volume-xmark text-[10px] text-red-400"></i>
-                            </button>
+                        <div class="flex items-center gap-1.5">
                             <span class="text-[8px]">4G</span>
                             <i class="fa-solid fa-battery-three-quarters text-[9px] text-green-400"></i>
                         </div>
@@ -571,7 +568,7 @@
 
         const audioFX = new SoundEffects();
 
-        /* TIKTOK MP4 FEED CONTROLLER WITH RANDOMIZER */
+        /* TIKTOK MP4 FEED CONTROLLER WITH AUTOMATIC SOUND UNMUTE */
         const memeAuthors = ['@belaz_king', '@mikhali4_vip', '@rabotyaga777', '@zavod_live', '@minsk_dump', '@heavy_machinery', '@sobol_drives'];
         const memeAudio = ['оригинальный звук - Михалыч', 'трек - БелАЗ на Базе', 'звук - Карьерный Дрифт', 'ремикс - Соляра и Термос'];
         const memeDescs = [
@@ -589,7 +586,23 @@
         let loadedTikTokCount = 0;
         let lastPlayedIndex = -1;
         let isVideoSoundUnmuted = false;
+        let scanCompleted = false;
         let videoIntersectionObserver = null;
+
+        // Auto-enable audio on user interaction
+        function enableVideoAudio() {
+            if (!isVideoSoundUnmuted) {
+                isVideoSoundUnmuted = true;
+                const visibleCard = getCurrentlyVisibleTikTokCard();
+                if (visibleCard) {
+                    const video = visibleCard.querySelector('video');
+                    if (video) {
+                        video.muted = false;
+                        video.play().catch(()=>{});
+                    }
+                }
+            }
+        }
 
         async function scanTikTokVideos() {
             const maxVideos = 50;
@@ -619,9 +632,10 @@
             } else {
                 availableVideos = ['tiktok1.mp4'];
             }
+            scanCompleted = true;
         }
 
-        scanTikTokVideos();
+        const scanPromise = scanTikTokVideos();
 
         function initVideoObserver() {
             if (videoIntersectionObserver) videoIntersectionObserver.disconnect();
@@ -675,7 +689,7 @@
 
             card.innerHTML = `
                 <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden pointer-events-none">
-                    <video class="tiktok-video-el w-full h-full object-cover" loop muted playsinline>
+                    <video class="tiktok-video-el w-full h-full object-cover" loop ${isVideoSoundUnmuted ? '' : 'muted'} playsinline>
                         <source src="${videoSrc}" type="video/mp4">
                     </video>
                 </div>
@@ -720,6 +734,7 @@
             const likeBtn = card.querySelector('.like-btn');
             likeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                enableVideoAudio();
                 likeBtn.classList.add('text-red-500');
                 audioFX.playSwipe();
                 
@@ -789,37 +804,12 @@
         const radioIcon = document.getElementById('radio-icon');
         const radioText = document.getElementById('radio-text');
         const mobileRadioContainer = document.getElementById('mobile-radio-container');
-        const videoMuteToggle = document.getElementById('video-mute-toggle');
-        const videoMuteIcon = document.getElementById('video-mute-icon');
 
         function triggerVibration(pattern) {
             if ("vibrate" in navigator) {
                 try { navigator.vibrate(pattern); } catch(e){}
             }
         }
-
-        function toggleVideoAudio() {
-            isVideoSoundUnmuted = !isVideoSoundUnmuted;
-            
-            const visibleCard = getCurrentlyVisibleTikTokCard();
-            if (visibleCard) {
-                const video = visibleCard.querySelector('video');
-                if (video) {
-                    video.muted = !isVideoSoundUnmuted;
-                    if (isVideoSoundUnmuted && gameState.isPhoneVisible) {
-                        video.play().catch(()=>{});
-                    }
-                }
-            }
-
-            if (isVideoSoundUnmuted) {
-                videoMuteIcon.className = "fa-solid fa-volume-high text-[10px] text-green-400";
-            } else {
-                videoMuteIcon.className = "fa-solid fa-volume-xmark text-[10px] text-red-400";
-            }
-        }
-
-        videoMuteToggle.addEventListener('click', toggleVideoAudio);
 
         function resetBossAndState() {
             clearTimeout(gameState.bossTimer);
@@ -830,7 +820,6 @@
             gameState.bossArrived = false;
             gameState.isFakeAlarm = false;
 
-            // Instantly hide boss & fake passerby
             bossCharacter.classList.add('translate-y-full');
             fakePasserby.classList.add('translate-y-full');
             
@@ -855,9 +844,14 @@
             audioFX.playSwipe();
         }
 
-        function startGame() {
+        async function startGame() {
             audioFX.init();
+            enableVideoAudio();
             
+            if (!scanCompleted) {
+                await scanPromise;
+            }
+
             resetBossAndState();
 
             gameState.isRunning = true;
@@ -980,6 +974,7 @@
 
         function showPhone() {
             if (!gameState.isRunning) return;
+            enableVideoAudio();
             gameState.isPhoneVisible = true;
 
             phoneWrapper.classList.remove('phone-hidden');
@@ -1220,6 +1215,7 @@
         });
 
         tiktokFeed.addEventListener('scroll', () => {
+            enableVideoAudio();
             audioFX.playSwipe();
             if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 200) {
                 appendMoreTikToks(4);

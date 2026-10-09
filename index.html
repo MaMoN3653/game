@@ -323,7 +323,7 @@
                 <div id="phone-screen" class="relative w-full h-full bg-slate-900 rounded-[28px] overflow-hidden flex flex-col justify-between border border-neutral-800">
                     
                     <!-- Status Bar -->
-                    <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent">
+                    <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent shrink-0">
                         <span>14:32</span>
                         <div class="flex items-center gap-2">
                             <button id="video-mute-toggle" class="text-white hover:text-yellow-400 transition-colors">
@@ -334,13 +334,15 @@
                         </div>
                     </div>
 
-                    <!-- ENDLESS TIKTOK FEED WITH SMOOTH SNAP SWIPES -->
-                    <div id="tiktok-feed" class="absolute inset-0 pt-5 pb-8 flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y" style="-webkit-overflow-scrolling: touch;">
-                        <!-- TikTok Cards inserted dynamically -->
+                    <!-- FEED AREA FIXED EXACTLY TO SCREEN -->
+                    <div class="relative w-full h-[calc(100%-3.5rem)] overflow-hidden">
+                        <div id="tiktok-feed" class="w-full h-full flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y" style="-webkit-overflow-scrolling: touch;">
+                            <!-- Cards inserted dynamically -->
+                        </div>
                     </div>
 
                     <!-- Bottom TikTok Nav -->
-                    <div class="h-9 w-full bg-black/90 backdrop-blur border-t border-neutral-800 flex justify-around items-center text-white z-30 px-1">
+                    <div class="h-9 w-full bg-black/90 backdrop-blur border-t border-neutral-800 flex justify-around items-center text-white z-30 px-1 shrink-0">
                         <i class="fa-solid fa-house text-xs text-white"></i>
                         <i class="fa-solid fa-user-group text-xs text-neutral-500"></i>
                         <div class="w-6 h-4 bg-gradient-to-r from-cyan-400 to-pink-500 rounded p-[1px] flex items-center justify-center">
@@ -569,7 +571,7 @@
 
         const audioFX = new SoundEffects();
 
-        /* TIKTOK MP4 SCANNER & FEED ENGINE */
+        /* TIKTOK MP4 FEED CONTROLLER & AUDIO ISOLATION */
         const memeAuthors = ['@belaz_king', '@mikhali4_vip', '@rabotyaga777', '@zavod_live', '@minsk_dump', '@heavy_machinery', '@sobol_drives'];
         const memeAudio = ['оригинальный звук - Михалыч', 'трек - БелАЗ на Базе', 'звук - Карьерный Дрифт', 'ремикс - Соляра и Термос'];
         const memeDescs = [
@@ -586,6 +588,7 @@
         let availableVideos = [];
         let loadedTikTokCount = 0;
         let isVideoSoundUnmuted = false;
+        let videoIntersectionObserver = null;
 
         async function scanTikTokVideos() {
             const maxVideos = 50;
@@ -619,6 +622,29 @@
 
         scanTikTokVideos();
 
+        // Intersection Observer: Only play video that is currently visible in viewport
+        function initVideoObserver() {
+            if (videoIntersectionObserver) videoIntersectionObserver.disconnect();
+
+            videoIntersectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target.querySelector('video');
+                    if (!video) return;
+
+                    if (entry.isIntersecting && gameState.isPhoneVisible) {
+                        video.muted = !isVideoSoundUnmuted;
+                        video.play().catch(()=>{});
+                    } else {
+                        video.pause();
+                        video.muted = true;
+                    }
+                });
+            }, {
+                root: document.getElementById('tiktok-feed'),
+                threshold: 0.6
+            });
+        }
+
         function createTikTokCard() {
             loadedTikTokCount++;
             const author = memeAuthors[Math.floor(Math.random() * memeAuthors.length)];
@@ -627,7 +653,6 @@
             const isLoud = Math.random() < 0.15;
             const isDouble = Math.random() < 0.20;
 
-            // Pick available video or fallback
             let videoSrc = 'tiktok1.mp4';
             if (availableVideos.length > 0) {
                 videoSrc = availableVideos[(loadedTikTokCount - 1) % availableVideos.length];
@@ -636,53 +661,50 @@
             }
 
             const card = document.createElement('div');
-            card.className = `tiktok-card relative w-full h-full min-h-[310px] sm:min-h-[380px] bg-black rounded-xl flex flex-col justify-between overflow-hidden mb-3 text-white snap-start shrink-0 ${isLoud ? 'border-4 border-red-500' : ''}`;
+            // Exact full height for single-card viewport snapping
+            card.className = `tiktok-card relative w-full h-full bg-black rounded-xl flex flex-col justify-between overflow-hidden snap-start shrink-0 ${isLoud ? 'border-4 border-red-500' : ''}`;
             
             card.setAttribute('data-loud', isLoud ? 'true' : 'false');
             card.setAttribute('data-double', isDouble ? 'true' : 'false');
 
             card.innerHTML = `
-                <!-- MP4 Video Background -->
                 <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden pointer-events-none">
-                    <video class="tiktok-video-el w-full h-full object-cover" autoplay loop ${isVideoSoundUnmuted ? '' : 'muted'} playsinline>
+                    <video class="tiktok-video-el w-full h-full object-cover" loop muted playsinline>
                         <source src="${videoSrc}" type="video/mp4">
                     </video>
                 </div>
 
-                <!-- Overlay Header -->
-                <div class="relative z-10 flex items-center justify-between p-3 pointer-events-none">
+                <div class="relative z-10 flex items-center justify-between p-2 sm:p-3 pointer-events-none">
                     <span class="bg-black/60 backdrop-blur px-2 py-0.5 rounded-full text-[9px] font-bold">РЕКОМЕНДАЦИИ #${loadedTikTokCount}</span>
                     ${isDouble ? '<span class="bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[9px] font-black animate-pulse">🔥 x2 BYN!</span>' : ''}
                     ${isLoud ? '<span class="bg-red-600 text-white px-2 py-0.5 rounded-full text-[9px] font-black animate-bounce">🔊 ГРОМКИЙ ЗВУК!</span>' : ''}
                 </div>
 
-                <!-- TikTok Right Action Bar -->
-                <div class="absolute right-2 bottom-12 z-20 flex flex-col items-center gap-3">
-                    <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-800 flex items-center justify-center text-xs font-bold text-yellow-400">
+                <div class="absolute right-2 bottom-10 z-20 flex flex-col items-center gap-3">
+                    <div class="w-7 h-7 rounded-full border-2 border-white bg-slate-800 flex items-center justify-center text-xs font-bold text-yellow-400">
                         <i class="fa-solid fa-user"></i>
                     </div>
                     <div class="flex flex-col items-center">
-                        <button class="like-btn w-9 h-9 bg-black/40 rounded-full flex items-center justify-center text-white hover:text-red-500 text-base active:scale-125 transition-transform">
+                        <button class="like-btn w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white hover:text-red-500 text-sm active:scale-125 transition-transform">
                             <i class="fa-solid fa-heart"></i>
                         </button>
                         <span class="text-[9px] font-bold mt-0.5">${(Math.random() * 80 + 5).toFixed(1)}K</span>
                     </div>
                     <div class="flex flex-col items-center">
-                        <button class="w-9 h-9 bg-black/40 rounded-full flex items-center justify-center text-white text-base">
+                        <button class="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white text-sm">
                             <i class="fa-solid fa-comment-dots"></i>
                         </button>
                         <span class="text-[9px] font-bold mt-0.5">${(Math.random() * 20 + 1).toFixed(1)}K</span>
                     </div>
-                    <div class="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center border border-white/20 animate-spin-disc">
-                        <i class="fa-solid fa-compact-disc text-amber-400 text-sm"></i>
+                    <div class="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center border border-white/20 animate-spin-disc">
+                        <i class="fa-solid fa-compact-disc text-amber-400 text-xs"></i>
                     </div>
                 </div>
 
-                <!-- Bottom TikTok Description -->
-                <div class="relative z-10 p-3 max-w-[80%] pointer-events-none">
+                <div class="relative z-10 p-2 sm:p-3 max-w-[80%] pointer-events-none">
                     <div class="font-extrabold text-xs mb-0.5 text-yellow-300 drop-shadow">${author}</div>
-                    <p class="text-[11px] text-slate-100 leading-snug line-clamp-3 mb-2 drop-shadow">${desc}</p>
-                    <div class="flex items-center gap-1.5 text-[9px] text-slate-300 font-semibold">
+                    <p class="text-[10px] text-slate-100 leading-snug line-clamp-2 mb-1 drop-shadow">${desc}</p>
+                    <div class="flex items-center gap-1.5 text-[8px] text-slate-300 font-semibold">
                         <i class="fa-solid fa-music text-yellow-400 animate-pulse"></i>
                         <span class="truncate">${audioTrack}</span>
                     </div>
@@ -703,10 +725,14 @@
                 setTimeout(() => heart.remove(), 800);
             });
 
+            if (videoIntersectionObserver) {
+                videoIntersectionObserver.observe(card);
+            }
+
             return card;
         }
 
-        function appendMoreTikToks(count = 5) {
+        function appendMoreTikToks(count = 4) {
             for (let i = 0; i < count; i++) {
                 tiktokFeed.appendChild(createTikTokCard());
             }
@@ -768,13 +794,17 @@
 
         function toggleVideoAudio() {
             isVideoSoundUnmuted = !isVideoSoundUnmuted;
-            const videos = document.querySelectorAll('.tiktok-video-el');
-            videos.forEach(v => {
-                v.muted = !isVideoSoundUnmuted;
-                if (isVideoSoundUnmuted) {
-                    v.play().catch(()=>{});
+            
+            const visibleCard = getCurrentlyVisibleTikTokCard();
+            if (visibleCard) {
+                const video = visibleCard.querySelector('video');
+                if (video) {
+                    video.muted = !isVideoSoundUnmuted;
+                    if (isVideoSoundUnmuted && gameState.isPhoneVisible) {
+                        video.play().catch(()=>{});
+                    }
                 }
-            });
+            }
 
             if (isVideoSoundUnmuted) {
                 videoMuteIcon.className = "fa-solid fa-volume-high text-[10px] text-green-400";
@@ -806,7 +836,9 @@
 
             tiktokFeed.innerHTML = '';
             loadedTikTokCount = 0;
-            appendMoreTikToks(8);
+            
+            initVideoObserver();
+            appendMoreTikToks(6);
 
             showPhone();
             resetRadioState();
@@ -862,11 +894,30 @@
             const cards = document.querySelectorAll('.tiktok-card');
             for (let card of cards) {
                 const rect = card.getBoundingClientRect();
-                if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+                const feedRect = tiktokFeed.getBoundingClientRect();
+                if (rect.top >= feedRect.top - 20 && rect.bottom <= feedRect.bottom + 20) {
                     return card;
                 }
             }
             return null;
+        }
+
+        function pauseAllVideos() {
+            const videos = document.querySelectorAll('.tiktok-video-el');
+            videos.forEach(v => {
+                v.pause();
+            });
+        }
+
+        function resumeActiveVideo() {
+            const visibleCard = getCurrentlyVisibleTikTokCard();
+            if (visibleCard) {
+                const video = visibleCard.querySelector('video');
+                if (video) {
+                    video.muted = !isVideoSoundUnmuted;
+                    video.play().catch(()=>{});
+                }
+            }
         }
 
         function hidePhone() {
@@ -879,6 +930,7 @@
             unhideZone.classList.remove('opacity-0', 'pointer-events-none');
             handsOnWheel.classList.remove('opacity-0');
 
+            pauseAllVideos(); // Pause videos on phone hide
             audioFX.playSwipe();
             triggerVibration(30);
         }
@@ -893,6 +945,7 @@
             unhideZone.classList.add('opacity-0', 'pointer-events-none');
             handsOnWheel.classList.add('opacity-0');
 
+            resumeActiveVideo(); // Resume video on phone unhide
             audioFX.playSwipe();
             triggerVibration(30);
         }
@@ -1062,6 +1115,7 @@
 
         function gameOver(reasonText, causeText) {
             gameState.isRunning = false;
+            pauseAllVideos();
             audioFX.playCaught();
             triggerVibration([300, 100, 300]);
 
@@ -1122,10 +1176,9 @@
                 '<i class="fa-solid fa-volume-high text-base"></i>';
         });
 
-        // Endless Feed Scroll Listener with Auto-Append
         tiktokFeed.addEventListener('scroll', () => {
             audioFX.playSwipe();
-            if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 300) {
+            if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 200) {
                 appendMoreTikToks(4);
             }
         }, { passive: true });

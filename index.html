@@ -1,456 +1,1179 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="h-full w-full select-none">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>БеЛАЗ: Смена в ТикТоке</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #111;
-      color: #fff;
-    }
-    #game-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>БеЛАЗ 75710: Смена в ТикТоке</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800;900&display=swap" rel="stylesheet">
 
-    /* Кабина БеЛАЗа */
-    .cabin {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(180deg, #1f2738 0%, #0d121c 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
+    <style>
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
 
-    /* Лобовое стекло (Вид на карьер) */
-    .windshield {
-      position: relative;
-      width: 100%;
-      height: 55%;
-      background: linear-gradient(180deg, #87CEEB 0%, #E0CDA9 60%, #8B5A2B 100%);
-      overflow: hidden;
-      border-bottom: 12px solid #222;
-    }
-    .quarry-bg {
-      position: absolute;
-      bottom: 0; width: 100%; height: 80%;
-      background: repeating-linear-gradient(0deg, #7a5230, #7a5230 20px, #613e23 20px, #613e23 40px);
-      clip-path: polygon(0 40%, 20% 20%, 40% 50%, 60% 10%, 80% 35%, 100% 15%, 100% 100%, 0 100%);
-    }
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: #05070a;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+        }
 
-    /* Первый отдел (Инспектор в белой каске) */
-    .inspector {
-      position: absolute;
-      bottom: 10px;
-      left: -150px;
-      width: 130px;
-      height: 180px;
-      transition: left 0.4s ease-out;
-      z-index: 5;
-    }
-    .inspector.active { left: 15%; }
-    .inspector .head {
-      position: absolute; top: 10px; left: 35px; width: 50px; height: 50px;
-      background: #f1c27d; border-radius: 50%;
-    }
-    .inspector .helmet {
-      position: absolute; top: -5px; left: 25px; width: 70px; height: 30px;
-      background: #ffffff; border-radius: 35px 35px 5px 5px;
-      border: 2px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    }
-    .inspector .helmet-visor {
-      position: absolute; top: 18px; left: 20px; width: 80px; height: 8px;
-      background: #e0e0e0; border-radius: 3px;
-    }
-    .inspector .body-suit {
-      position: absolute; top: 60px; left: 25px; width: 70px; height: 100px;
-      background: #1e3d59; border-radius: 10px 10px 0 0;
-    }
-    .inspector .vest {
-      position: absolute; top: 60px; left: 25px; width: 70px; height: 60px;
-      background: #ff6e40;
-    }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
 
-    /* Панель приборов БеЛАЗа */
-    .dashboard {
-      position: relative;
-      height: 45%;
-      background: #2a2d32;
-      border-top: 6px solid #111;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding: 20px;
-    }
-    .wheel {
-      width: 140px; height: 140px;
-      border: 20px solid #111;
-      border-radius: 50%;
-      position: relative;
-      background: radial-gradient(circle, #333 40%, transparent 41%);
-      box-shadow: inset 0 0 10px #000;
-    }
-    .wheel-hands {
-      position: absolute; width: 100%; height: 100%;
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 0 5px; opacity: 0; transition: opacity 0.2s;
-    }
-    .wheel-hands.visible { opacity: 1; }
-    .hand { width: 30px; height: 40px; background: #f1c27d; border-radius: 8px; }
+        /* Smooth phone slide down/up animation */
+        .phone-container {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
 
-    /* Михалыч */
-    .partner {
-      position: absolute; right: 20px; bottom: 40px;
-      width: 120px; height: 160px; background: #3d405b;
-      border-radius: 20px 20px 0 0;
-    }
-    .partner-head {
-      position: absolute; top: -40px; left: 30px; width: 60px; height: 60px;
-      background: #dda15e; border-radius: 50%;
-    }
-    .partner-cap {
-      position: absolute; top: -50px; left: 25px; width: 70px; height: 25px;
-      background: #bc4749; border-radius: 15px 15px 0 0;
-    }
-    .speech-bubble {
-      position: absolute; top: -110px; right: 10px;
-      background: #fff; color: #000; padding: 10px 14px;
-      border-radius: 12px; font-size: 13px; font-weight: bold;
-      max-width: 180px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      z-index: 10; display: none;
-    }
-    .speech-bubble:after {
-      content: ''; position: absolute; bottom: -10px; right: 30px;
-      border-width: 10px 10px 0; border-style: solid;
-      border-color: #fff transparent; display: block; width: 0;
-    }
+        .phone-hidden {
+            transform: translate(-50%, 128%) !important;
+            pointer-events: none !important;
+        }
 
-    /* Телефон */
-    .phone-container {
-      position: absolute;
-      bottom: -450px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 240px;
-      height: 440px;
-      background: #000;
-      border: 8px solid #222;
-      border-radius: 32px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-      transition: bottom 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 20;
-    }
-    .phone-container.active { bottom: 20px; }
+        .phone-visible {
+            transform: translate(-50%, 0) !important;
+        }
 
-    /* TikTok UI */
-    .tiktok-screen {
-      position: relative; width: 100%; height: 100%; background: #111;
-    }
-    .tiktok-video {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-    .tiktok-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      display: flex; flex-direction: column; justify-content: space-between;
-      padding: 12px; pointer-events: none;
-    }
-    .tiktok-header {
-      text-align: center; font-size: 13px; font-weight: bold;
-      color: rgba(255,255,255,0.8); text-shadow: 0 1px 4px #000;
-    }
-    .tiktok-side {
-      position: absolute; right: 10px; bottom: 80px;
-      display: flex; flex-direction: column; gap: 12px; align-items: center;
-    }
-    .icon-btn {
-      width: 36px; height: 36px; background: rgba(0,0,0,0.4);
-      border-radius: 50%; display: flex; align-items: center;
-      justify-content: center; font-size: 18px; color: #fff;
-    }
-    .tiktok-footer {
-      margin-bottom: 10px; font-size: 12px; text-shadow: 0 1px 4px #000;
-    }
+        /* Cabin Shake on Boss Step / Road Bump */
+        @keyframes cabinShake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-5px, 6px) rotate(-1deg); }
+            50% { transform: translate(6px, -5px) rotate(1deg); }
+            75% { transform: translate(-4px, -4px) rotate(-0.5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
 
-    /* Кнопки управления для мобилок */
-    .controls {
-      position: absolute; bottom: 10px; left: 10px;
-      display: flex; gap: 10px; z-index: 30;
-    }
-    .action-btn {
-      background: #e63946; color: #fff; border: none;
-      padding: 14px 20px; border-radius: 12px; font-weight: bold;
-      font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-      active: scale(0.95);
-    }
+        @keyframes hardBump {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-22px) rotate(2deg); }
+            60% { transform: translateY(12px) rotate(-1deg); }
+            100% { transform: translateY(0); }
+        }
 
-    /* Статусы и предупреждения */
-    .warning-indicator {
-      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(230, 57, 70, 0.9); color: #fff; padding: 8px 16px;
-      border-radius: 20px; font-weight: bold; display: none; z-index: 15;
-      animation: pulse 0.5s infinite alternate;
-    }
-    @keyframes pulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.1); } }
+        .shake {
+            animation: cabinShake 0.12s ease-in-out infinite;
+        }
 
-    .score-board {
-      position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6);
-      padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: bold;
-    }
+        .bump-anim {
+            animation: hardBump 0.45s ease-out;
+        }
 
-    /* Экран проигрыша */
-    .game-over {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 100; display: none;
-    }
-    .game-over h1 { color: #e63946; font-size: 28px; margin-bottom: 10px; }
-    .game-over p { margin-bottom: 20px; text-align: center; max-width: 80%; }
-    .restart-btn {
-      background: #2a9d8f; color: #fff; border: none; padding: 12px 24px;
-      border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer;
-    }
-  </style>
+        /* Engine gentle vibe */
+        @keyframes engineVibe {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(1.5px); }
+        }
+
+        .engine-idle {
+            animation: engineVibe 0.18s ease-in-out infinite;
+        }
+
+        /* Rotating Music Disc */
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-disc {
+            animation: spinSlow 4s linear infinite;
+        }
+
+        /* Scrollbar hide for endless feed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Comic speech bubble styling */
+        .speech-bubble {
+            position: relative;
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 3px solid #000000;
+            color: #000000;
+            box-shadow: 4px 4px 0px #000000;
+        }
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 20px;
+            border-width: 14px 12px 0;
+            border-style: solid;
+            border-color: #ffffff transparent;
+            display: block;
+            width: 0;
+        }
+        .speech-bubble:before {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            left: 18px;
+            border-width: 16px 14px 0;
+            border-style: solid;
+            border-color: #000000 transparent;
+            display: block;
+            width: 0;
+        }
+
+        /* Floating Hearts Animation */
+        @keyframes floatHeart {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1.4); opacity: 0; }
+        }
+        .floating-heart {
+            position: absolute;
+            animation: floatHeart 0.8s ease-out forwards;
+            pointer-events: none;
+            color: #ef4444;
+            font-size: 1.5rem;
+            z-index: 50;
+        }
+    </style>
 </head>
-<body>
-  <div id="game-container">
-    <div class="score-board">Зарплата: <span id="score">0</span> руб.</div>
-    <div class="warning-indicator" id="warning">⚠️ ПЕРВЫЙ ОТДЕЛ ИДЁТ!</div>
+<body class="h-full w-full flex items-center justify-center bg-slate-950 text-white overflow-hidden p-0 sm:p-2">
 
-    <div class="cabin">
-      <!-- Лобовое стекло -->
-      <div class="windshield">
-        <div class="quarry-bg"></div>
-        <div class="inspector" id="inspector">
-          <div class="helmet"><div class="helmet-visor"></div></div>
-          <div class="head"></div>
-          <div class="body-suit"><div class="vest"></div></div>
-        </div>
-      </div>
+    <div id="game-container" class="relative w-full h-full sm:max-w-4xl sm:max-h-[880px] bg-slate-900 overflow-hidden shadow-2xl sm:rounded-3xl flex flex-col justify-between border-0 sm:border-4 border-slate-700">
 
-      <!-- Приборная панель -->
-      <div class="dashboard">
-        <div class="wheel">
-          <div class="wheel-hands" id="hands">
-            <div class="hand"></div>
-            <div class="hand"></div>
-          </div>
+        <!-- TOP BAR UI OVERLAY -->
+        <div class="absolute top-2 left-2 right-2 z-30 flex justify-between items-center pointer-events-none">
+            <!-- Score & Stats -->
+            <div class="bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-yellow-500/50 flex items-center gap-2 sm:gap-4 shadow-2xl">
+                <div>
+                    <div class="text-[9px] sm:text-xs text-yellow-400 font-bold uppercase tracking-wider">Смена</div>
+                    <div id="score-display" class="text-xs sm:text-base font-black text-white pixel-font">00:00</div>
+                </div>
+                <div class="h-6 w-px bg-slate-700"></div>
+                <div>
+                    <div class="text-[9px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">ЗП</div>
+                    <div id="money-display" class="text-xs sm:text-base font-extrabold text-green-400">0 BYN</div>
+                </div>
+                <div class="h-6 w-px bg-slate-700"></div>
+                <div>
+                    <div class="text-[9px] sm:text-xs text-amber-400 font-bold uppercase tracking-wider">Уровень</div>
+                    <div id="level-display" class="text-xs sm:text-base font-black text-amber-300">Ур. 1</div>
+                </div>
+            </div>
+
+            <!-- Danger / Warning Indicator -->
+            <div id="warning-box" class="bg-red-950/95 backdrop-blur-md border-2 border-red-600 px-3 py-1.5 rounded-2xl flex items-center gap-2 opacity-0 transition-all duration-150 transform scale-90 shadow-red-900/60 shadow-xl">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg animate-ping"></i>
+                <div>
+                    <div id="warning-title" class="text-[9px] text-red-300 font-bold uppercase leading-none">ТРЕВОГА!</div>
+                    <div id="warning-text" class="text-xs font-black text-red-400 uppercase tracking-wide leading-tight">ПЕРВЫЙ ОТДЕЛ!</div>
+                </div>
+            </div>
+
+            <!-- Sound toggle -->
+            <div class="pointer-events-auto">
+                <button id="sound-btn" class="w-10 h-10 bg-slate-800/90 active:bg-slate-700 border border-slate-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-volume-high text-base"></i>
+                </button>
+            </div>
         </div>
 
-        <div class="partner">
-          <div class="partner-cap"></div>
-          <div class="partner-head"></div>
-          <div class="speech-bubble" id="speech">Прячь трубу, начальник идёт!</div>
+        <!-- WORK PRODUCTIVITY BAR (SLACKING PENALTY) -->
+        <div class="absolute top-16 left-2 right-2 z-20 pointer-events-none flex flex-col items-center">
+            <div class="w-full max-w-xs bg-black/75 backdrop-blur rounded-full h-3 border border-slate-700 p-0.5 overflow-hidden shadow-lg flex items-center">
+                <div id="productivity-bar" class="h-full bg-gradient-to-r from-emerald-500 via-yellow-400 to-green-400 rounded-full w-full transition-all duration-300"></div>
+            </div>
+            <span id="productivity-label" class="text-[9px] font-black tracking-widest uppercase text-slate-300 mt-0.5 drop-shadow">План Выработки: 100%</span>
         </div>
-      </div>
+
+        <!-- MAIN VIEWPORT / CABIN -->
+        <div id="cabin-viewport" class="relative w-full h-full engine-idle flex-1 bg-slate-800 overflow-hidden">
+            
+            <!-- Windshield View: Quarry Landscape -->
+            <div class="absolute top-0 left-0 right-0 h-3/5 bg-gradient-to-b from-sky-400 via-amber-200 to-amber-600 overflow-hidden">
+                <svg class="absolute bottom-0 w-full h-36 text-amber-800/80" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M0,96 L48,85.3 C96,75,192,53,288,58.7 C384,64,480,96,576,96 C672,96,768,64,864,58.7 C960,53,1056,75,1104,85.3 L1152,96 L1152,120 L0,120 Z" fill="currentColor"></path>
+                </svg>
+                <svg class="absolute bottom-0 w-full h-24 text-amber-900" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M0,40 L80,50 C160,60,320,80,480,75 C640,70,800,40,960,45 C1120,50,1200,70,1280,80 L1280,120 L0,120 Z" fill="currentColor"></path>
+                </svg>
+
+                <div class="absolute inset-0 bg-yellow-900/10 mix-blend-overlay"></div>
+
+                <!-- Windshield Pillars -->
+                <div class="absolute inset-0 border-x-[20px] sm:border-x-[40px] border-t-[10px] border-amber-950/90 pointer-events-none"></div>
+                <div class="absolute left-1/3 top-0 bottom-0 w-3 sm:w-4 bg-amber-950/80 transform -skew-x-12"></div>
+                <div class="absolute right-1/3 top-0 bottom-0 w-3 sm:w-4 bg-amber-950/80 transform skew-x-12"></div>
+            </div>
+
+            <!-- CABIN SIDE WINDOW & INSPECTOR / PASSERBY SPRITES -->
+            <div class="absolute top-8 right-2 sm:right-6 w-36 sm:w-56 h-52 sm:h-72 border-4 sm:border-8 border-yellow-600/90 bg-slate-900/95 rounded-t-3xl overflow-hidden shadow-2xl z-10">
+                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent z-20 pointer-events-none"></div>
+                
+                <!-- INSPECTOR (FIRST DEPARTMENT - WHITE HELMET) -->
+                <div id="boss-character" class="absolute inset-0 flex flex-col items-center justify-end transform translate-y-full transition-transform duration-200 z-10">
+                    <div class="relative w-32 sm:w-44 h-48 sm:h-60 flex flex-col items-center">
+                        <!-- WHITE CONSTRUCTION HELMET -->
+                        <div class="w-22 sm:w-30 h-9 sm:h-12 bg-slate-100 rounded-t-full border-b-2 sm:border-b-4 border-slate-300 relative flex items-center justify-center shadow-lg z-20">
+                            <div class="w-5 h-5 sm:w-7 sm:h-7 bg-red-600 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] text-white font-black border border-white">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div class="absolute -bottom-1.5 w-26 sm:w-36 h-2.5 sm:h-3.5 bg-slate-200 border-b-2 border-slate-400 rounded-full shadow-md"></div>
+                        </div>
+
+                        <!-- Face -->
+                        <div class="w-14 sm:w-20 h-14 sm:h-20 bg-amber-200 rounded-2xl relative border-2 border-amber-400 -mt-1 flex flex-col items-center justify-center z-10">
+                            <div class="flex gap-1.5 mt-1">
+                                <div class="w-3 sm:w-5 h-1.5 bg-black transform rotate-12"></div>
+                                <div class="w-3 sm:w-5 h-1.5 bg-black transform -rotate-12"></div>
+                            </div>
+                            <div class="flex gap-2 sm:gap-4 mt-1">
+                                <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full flex items-center justify-center">
+                                    <div class="w-1 h-1 bg-black rounded-full"></div>
+                                </div>
+                                <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full flex items-center justify-center">
+                                    <div class="w-1 h-1 bg-black rounded-full"></div>
+                                </div>
+                            </div>
+                            <div class="w-8 sm:w-12 h-2.5 sm:h-3 bg-neutral-900 rounded-full mt-1.5"></div>
+                        </div>
+
+                        <!-- Suit Body -->
+                        <div class="w-28 sm:w-36 h-28 sm:h-36 bg-slate-900 rounded-t-3xl border-t-2 border-slate-700 flex flex-col items-center pt-2">
+                            <div class="w-8 sm:w-10 h-12 sm:h-16 bg-white clip-triangle flex flex-col items-center">
+                                <div class="w-2 sm:w-3 h-10 bg-red-700"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAKE ALARM PASSERBY (ORANGE VEST WORKER) -->
+                <div id="fake-passerby" class="absolute inset-0 flex flex-col items-center justify-end transform translate-y-full transition-transform duration-300 z-10">
+                    <div class="relative w-28 sm:w-36 h-40 sm:h-48 flex flex-col items-center opacity-80">
+                        <div class="w-16 sm:w-20 h-7 sm:h-9 bg-orange-500 rounded-t-full border-b-2 border-orange-700"></div>
+                        <div class="w-12 sm:w-16 h-12 sm:h-16 bg-amber-200 rounded-xl border border-amber-400 -mt-1 flex items-center justify-center">
+                            <i class="fa-solid fa-face-smile text-black text-sm"></i>
+                        </div>
+                        <div class="w-20 sm:w-28 h-20 sm:h-28 bg-orange-600 rounded-t-2xl flex justify-center pt-1">
+                            <div class="w-3 h-full bg-yellow-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD & STEERING WHEEL -->
+            <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-neutral-900 border-t-4 sm:border-t-8 border-neutral-800 rounded-t-3xl shadow-inner z-10 flex justify-between items-end px-2 sm:px-8 pb-2">
+                
+                <!-- WORKER PARTNER (МИХАЛЫЧ - LEFT SIDE) -->
+                <div class="relative w-32 sm:w-52 h-44 sm:h-64 flex flex-col items-center -ml-1 sm:-ml-4 z-20">
+                    
+                    <!-- HIGH-VISIBILITY COMIC SPEECH BUBBLE -->
+                    <div id="worker-bubble" class="speech-bubble absolute -top-24 sm:-top-28 left-0 sm:-left-6 w-48 sm:w-64 p-2 sm:p-3 text-xs sm:text-sm font-extrabold text-black z-40 opacity-0 transition-all duration-200 pointer-events-none leading-tight">
+                        <span id="worker-text">«Спрячь сотовый, Михалыч не дремет!»</span>
+                    </div>
+
+                    <div class="relative w-18 h-18 sm:w-24 sm:h-24 bg-amber-300 rounded-full border-2 border-amber-500 flex flex-col items-center justify-center shadow-md">
+                        <div class="absolute -top-3 w-22 h-7 sm:w-32 sm:h-10 bg-yellow-400 border-b-2 sm:border-b-4 border-yellow-600 rounded-t-full shadow-md"></div>
+                        <div class="flex gap-1 mt-1">
+                            <div class="w-4 h-3 sm:w-6 sm:h-4 border border-black bg-sky-200/60 rounded"></div>
+                            <div class="w-4 h-3 sm:w-6 sm:h-4 border border-black bg-sky-200/60 rounded"></div>
+                        </div>
+                        <div class="w-12 h-6 sm:w-20 sm:h-10 bg-amber-800 rounded-b-xl mt-1"></div>
+                    </div>
+                    <div class="w-28 h-24 sm:w-40 sm:h-36 bg-orange-600 rounded-t-2xl border-t-2 sm:border-t-4 border-orange-400 relative flex justify-center">
+                        <div class="w-5 sm:w-8 h-full bg-slate-200/80 mx-1"></div>
+                        <div class="w-5 sm:w-8 h-full bg-slate-200/80 mx-1"></div>
+                    </div>
+                </div>
+
+                <!-- STEERING WHEEL -->
+                <div class="relative w-44 h-44 sm:w-72 sm:h-72 rounded-full border-[12px] sm:border-[22px] border-neutral-800 bg-transparent flex items-center justify-center shadow-2xl transform translate-y-12 sm:translate-y-20">
+                    <div class="absolute w-full h-3 sm:h-6 bg-neutral-800"></div>
+                    <div class="absolute h-full w-3 sm:w-6 bg-neutral-800"></div>
+                    <div class="w-16 h-16 sm:w-24 sm:h-24 bg-yellow-500 rounded-full border-2 sm:border-4 border-neutral-900 flex items-center justify-center shadow-md z-10">
+                        <span class="font-black text-black tracking-tighter text-[10px] sm:text-sm italic">БЕЛАЗ</span>
+                    </div>
+
+                    <!-- Hands on Steering Wheel -->
+                    <div id="hands-on-wheel" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-150">
+                        <div class="absolute top-6 left-1 sm:top-12 sm:left-2 w-8 h-10 sm:w-12 sm:h-16 bg-amber-300 rounded-full border border-amber-500 transform -rotate-45"></div>
+                        <div class="absolute top-6 right-1 sm:top-12 sm:right-2 w-8 h-10 sm:w-12 sm:h-16 bg-amber-300 rounded-full border border-amber-500 transform rotate-45"></div>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD INTERACTIVE RADIO UNIT -->
+                <div class="w-28 sm:w-48 h-28 sm:h-40 bg-neutral-800 rounded-xl border border-neutral-700 p-2 flex flex-col justify-between hidden sm:flex">
+                    <div class="flex justify-around">
+                        <div class="w-10 h-10 rounded-full border-2 border-yellow-500 bg-black flex items-center justify-center relative">
+                            <div class="w-0.5 h-4 bg-red-500 origin-bottom transform rotate-45"></div>
+                            <span class="absolute bottom-0.5 text-[7px] text-white">КМ/Ч</span>
+                        </div>
+                        <div class="w-10 h-10 rounded-full border-2 border-green-500 bg-black flex items-center justify-center relative">
+                            <div class="w-0.5 h-4 bg-green-400 origin-bottom transform -rotate-12"></div>
+                            <span class="absolute bottom-0.5 text-[7px] text-white">СОЛЯРА</span>
+                        </div>
+                    </div>
+
+                    <!-- RADIO EVENT BUTTON -->
+                    <button id="radio-btn" class="pointer-events-auto h-9 bg-neutral-900 border-2 border-red-900 rounded-lg flex items-center justify-around px-2 active:scale-95 transition-all">
+                        <i id="radio-icon" class="fa-solid fa-walkie-talkie text-slate-500 text-xs"></i>
+                        <span id="radio-text" class="text-[9px] font-bold text-slate-400">РАЦИЯ МОЛЧИТ</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- MOBILE RADIO BUTTON FLOATING OVERLAY -->
+        <div id="mobile-radio-container" class="absolute top-28 left-3 z-30 sm:hidden opacity-0 pointer-events-none transition-opacity duration-200">
+            <button id="mobile-radio-btn" class="bg-red-600 active:bg-red-700 text-white text-xs font-black px-3 py-2 rounded-xl border-2 border-yellow-300 shadow-2xl flex items-center gap-2 animate-bounce">
+                <i class="fa-solid fa-walkie-talkie text-base"></i>
+                ОТВЕТИТЬ ДИСПЕТЧЕРУ!
+            </button>
+        </div>
+
+        <!-- SMARTPHONE CONTAINER WITH SMOOTH ANIMATION -->
+        <div id="phone-wrapper" class="absolute bottom-2 left-1/2 z-40 phone-container phone-visible">
+            
+            <div class="relative w-[250px] sm:w-[290px] h-[390px] sm:h-[490px] bg-black rounded-[36px] p-2.5 border-4 border-slate-700 shadow-2xl flex flex-col justify-between">
+                
+                <!-- Phone Top Notch -->
+                <div class="absolute top-3 left-1/2 transform -translate-x-1/2 w-20 h-3 bg-black rounded-b-lg z-50 flex justify-center items-center">
+                    <div class="w-6 h-1 bg-neutral-800 rounded-full"></div>
+                </div>
+
+                <!-- Phone Screen -->
+                <div id="phone-screen" class="relative w-full h-full bg-slate-900 rounded-[28px] overflow-hidden flex flex-col justify-between border border-neutral-800">
+                    
+                    <!-- Status Bar -->
+                    <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent">
+                        <span>14:32</span>
+                        <div class="flex items-center gap-1">
+                            <span class="text-[8px]">4G</span>
+                            <i class="fa-solid fa-battery-three-quarters text-[9px] text-green-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- ENDLESS TIKTOK FEED WITH MP4 VIDEO CONTENT -->
+                    <div id="tiktok-feed" class="absolute inset-0 pt-5 pb-8 flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y">
+                        <!-- TikTok Cards inserted dynamically -->
+                    </div>
+
+                    <!-- Bottom TikTok Nav -->
+                    <div class="h-9 w-full bg-black/90 backdrop-blur border-t border-neutral-800 flex justify-around items-center text-white z-30 px-1">
+                        <i class="fa-solid fa-house text-xs text-white"></i>
+                        <i class="fa-solid fa-user-group text-xs text-neutral-500"></i>
+                        <div class="w-6 h-4 bg-gradient-to-r from-cyan-400 to-pink-500 rounded p-[1px] flex items-center justify-center">
+                            <div class="w-full h-full bg-white rounded flex items-center justify-center text-black text-[10px] font-bold">+</div>
+                        </div>
+                        <i class="fa-solid fa-message text-xs text-neutral-500"></i>
+                        <i class="fa-solid fa-user text-xs text-neutral-500"></i>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- HIDE BUTTON FOR TOUCH DEVICES -->
+            <button id="hide-btn" class="mt-2 w-full bg-red-600 active:bg-red-700 text-white font-black py-3 px-2 rounded-2xl shadow-xl border-2 border-red-400 flex items-center justify-center gap-2 text-sm sm:text-base">
+                <i class="fa-solid fa-hand text-lg"></i>
+                СПРЯТАТЬ (ПРОБЕЛ)
+            </button>
+        </div>
+
+        <!-- UNHIDE BUTTON OVERLAY -->
+        <div id="unhide-zone" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 opacity-0 pointer-events-none transition-all duration-200 w-11/12 max-w-xs">
+            <button id="unhide-btn" class="w-full bg-emerald-500 active:bg-emerald-600 text-slate-950 font-black text-base sm:text-lg py-4 px-6 rounded-full shadow-2xl border-4 border-emerald-300 flex items-center justify-center gap-3 animate-bounce">
+                <i class="fa-solid fa-mobile-screen-button text-2xl"></i>
+                ДОСТАТЬ ТЕЛЕФОН
+            </button>
+        </div>
+
+        <!-- START SCREEN OVERLAY -->
+        <div id="start-screen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-4 text-center">
+            <div class="bg-yellow-500 text-black px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest mb-2 transform -rotate-1 shadow-lg">
+                Бесконечная смена
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-black text-white mb-2 tracking-tight">
+                БЕЛАЗ: <span class="text-yellow-400">СМЕНА В ТИКТОКЕ</span>
+            </h1>
+            <p class="text-slate-300 max-w-xs sm:max-w-md text-xs sm:text-base mb-4">
+                Управляй БеЛАЗом, листая ленту! Берегись Первого Отдела в Белой Каске, реагируй на вызовы рации и ямы на дорогах!
+            </p>
+
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-3 sm:p-4 max-w-xs sm:max-w-md w-full text-left mb-5 space-y-2 text-xs sm:text-sm">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-yellow-500/20 border border-yellow-500 text-yellow-400 flex items-center justify-center font-bold shrink-0">1</div>
+                    <span>Приближается Первый отдел — **жми «СПРЯТАТЬ» или Пробел**!</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-red-500/20 border border-red-500 text-red-400 flex items-center justify-center font-bold shrink-0">2</div>
+                    <span>Остерегайся фальшивых тревог и успевай отвечать по рации!</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-green-500/20 border border-green-500 text-green-400 flex items-center justify-center font-bold shrink-0">3</div>
+                    <span>Не сиди долго без дела — следи за Планом Выработки!</span>
+                </div>
+            </div>
+
+            <button id="start-btn" class="w-full max-w-xs sm:max-w-md bg-yellow-500 active:bg-yellow-400 text-black font-black text-lg py-4 rounded-2xl shadow-xl border-b-4 border-yellow-700 uppercase tracking-wider">
+                НАЧАТЬ СМЕНУ!
+            </button>
+        </div>
+
+        <!-- GAMEOVER OVERLAY -->
+        <div id="gameover-screen" class="absolute inset-0 bg-red-950/95 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-4 text-center hidden">
+            <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-3xl text-white mb-3 animate-bounce border-4 border-red-400">
+                <i class="fa-solid fa-handcuffs"></i>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-black text-white mb-1">СМЕНА ПРОВАЛЕНА!</h2>
+            <p id="gameover-reason" class="text-red-200 text-xs mb-4 font-semibold">Первый отдел застукал тебя со смартфоном!</p>
+
+            <!-- Dismissal Notice -->
+            <div class="bg-amber-50 rounded-xl p-4 text-slate-900 max-w-xs sm:max-w-md w-full shadow-2xl border-4 border-amber-200 text-left mb-5 relative rotate-1">
+                <div class="absolute top-3 right-3 border-2 border-red-600 text-red-600 font-black px-2 py-0.5 rounded text-[10px] tracking-widest transform rotate-12 uppercase">
+                    УВОЛЕН
+                </div>
+                <div class="text-center font-extrabold text-sm border-b-2 border-slate-300 pb-2 mb-2">
+                    АКТ О НАРУШЕНИИ ТРУДОВОЙ ДИСЦИПЛИНЫ
+                </div>
+                <div class="text-xs space-y-1.5 font-mono">
+                    <p><strong>Водитель:</strong> Работяга № 75710</p>
+                    <p><strong>Причина:</strong> <span id="gameover-cause-text">Первый Отдел (Белая Каска)</span></p>
+                    <p><strong>Продержался:</strong> <span id="final-score" class="font-bold text-red-600">00:00</span></p>
+                    <p><strong>Заработано:</strong> <span id="final-money" class="font-bold text-green-700">0 BYN</span></p>
+                </div>
+            </div>
+
+            <button id="restart-btn" class="w-full max-w-xs sm:max-w-md bg-white active:bg-slate-200 text-slate-950 font-black text-lg py-4 rounded-2xl shadow-xl border-b-4 border-slate-300 uppercase tracking-wider">
+                ПОПРОБОВАТЬ СНОВА
+            </button>
+        </div>
+
     </div>
 
-    <!-- Телефон -->
-    <div class="phone-container" id="phone">
-      <div class="tiktok-screen">
-        <video class="tiktok-video" id="tt-video" autoplay loop muted playsinline></video>
-        <div class="tiktok-overlay">
-          <div class="tiktok-header">Рекомендации</div>
-          <div class="tiktok-side">
-            <div class="icon-btn">❤️</div>
-            <div class="icon-btn">💬</div>
-            <div class="icon-btn">➡️</div>
-          </div>
-          <div class="tiktok-footer">
-            <b id="tt-author">@работяга51</b>
-            <p id="tt-desc">Когда смена только началась... #белаз #карьер</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Управление -->
-    <div class="controls">
-      <button class="action-btn" id="toggle-phone">📱 Достать / Спрятать (Пробел)</button>
-    </div>
-
-    <!-- Game Over -->
-    <div class="game-over" id="game-over">
-      <h1>УВОЛЕН БЕЗ ЗП!</h1>
-      <p id="dismissal-reason">Первый отдел заметил тебя с телефоном в кабине БеЛАЗа.</p>
-      <button class="restart-btn" onclick="restartGame()">Попробовать снова</button>
-    </div>
-  </div>
-
-  <script>
-    // Сканирование локальных видео tiktok1.mp4 ... tiktok50.mp4
-    const videoList = [];
-    for (let i = 1; i <= 50; i++) {
-      videoList.push(`tiktok${i}.mp4`);
-    }
-
-    // Демо-видео на случай если нет локальных
-    const fallbackVideos = [
-      'https://assets.mixkit.co/videos/preview/mixkit-dumper-truck-working-in-a-quarry-42511-large.mp4',
-      'https://assets.mixkit.co/videos/preview/mixkit-construction-site-dumper-truck-42510-large.mp4'
-    ];
-
-    let currentVideoIdx = 0;
-    let score = 0;
-    let isPhoneOut = false;
-    let isInspectorComing = false;
-    let isGameOver = false;
-    let savedVideoTime = 0;
-
-    const phone = document.getElementById('phone');
-    const hands = document.getElementById('hands');
-    const video = document.getElementById('tt-video');
-    const inspector = document.getElementById('inspector');
-    const warning = document.getElementById('warning');
-    const speech = document.getElementById('speech');
-    const scoreEl = document.getElementById('score');
-    const gameOverEl = document.getElementById('game-over');
-    const toggleBtn = document.getElementById('toggle-phone');
-
-    function loadVideo(index) {
-      const src = videoList[index % videoList.length];
-      video.src = src;
-      video.onerror = () => {
-        // Если файла tiktokN.mp4 нет, берем fallback
-        video.src = fallbackVideos[index % fallbackVideos.length];
-      };
-      video.currentTime = savedVideoTime;
-    }
-
-    function togglePhone() {
-      if (isGameOver) return;
-      isPhoneOut = !isPhoneOut;
-
-      if (isPhoneOut) {
-        phone.classList.add('active');
-        hands.classList.remove('visible');
-        video.muted = false;
-        video.play().catch(() => {});
-      } else {
-        savedVideoTime = video.currentTime;
-        video.pause();
-        phone.classList.remove('active');
-        hands.classList.add('visible');
-      }
-    }
-
-    // Обработка кнопки и клавиши Пробел
-    toggleBtn.addEventListener('click', togglePhone);
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        togglePhone();
-      }
-    });
-
-    // Свайп видео
-    let startY = 0;
-    phone.addEventListener('touchstart', e => startY = e.touches[0].clientY);
-    phone.addEventListener('touchend', e => {
-      let endY = e.changedTouches[0].clientY;
-      if (startY - endY > 50) {
-        currentVideoIdx++;
-        savedVideoTime = 0;
-        loadVideo(currentVideoIdx);
-      }
-    });
-
-    // Михалыч говорит
-    const phrases = [
-      "Михалыч: Слышишь шаги? Прячь трубу!",
-      "Михалыч: Первый отдел на лестнице!",
-      "Михалыч: Руки на руль держи, едет кто-то!",
-      "Михалыч: Смотри в оба, инспектор шныряет!"
-    ];
-
-    function showMichalych() {
-      speech.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-      speech.style.display = 'block';
-      setTimeout(() => speech.style.display = 'none', 2500);
-    }
-
-    // Игровой цикл опасности
-    function scheduleInspector() {
-      if (isGameOver) return;
-      let nextCheck = Math.random() * 4000 + 3000;
-
-      setTimeout(() => {
-        if (isGameOver) return;
-        isInspectorComing = true;
-        warning.style.display = 'block';
-        showMichalych();
-
-        // Время до прихода инспектора
-        setTimeout(() => {
-          if (isGameOver) return;
-          inspector.classList.add('active');
-
-          // Проверка поимки
-          setTimeout(() => {
-            if (isPhoneOut) {
-              triggerGameOver();
-            } else {
-              // Пронесло!
-              setTimeout(() => {
-                inspector.classList.remove('active');
-                warning.style.display = 'none';
-                isInspectorComing = false;
-                scheduleInspector();
-              }, 1500);
+    <script>
+        /* WEB AUDIO ENGINE & SOUND EFFECTS */
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
             }
-          }, 600);
-        }, 1200);
-      }, nextCheck);
-    }
 
-    // Начисление ЗП при просмотре
-    setInterval(() => {
-      if (isPhoneOut && !isGameOver) {
-        score += 15;
-        scoreEl.innerText = score;
-      }
-    }, 500);
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
 
-    function triggerGameOver() {
-      isGameOver = true;
-      video.pause();
-      gameOverEl.style.display = 'flex';
-    }
+            playFootsteps() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(90, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.12);
+                } catch(e){}
+            }
 
-    function restartGame() {
-      isGameOver = false;
-      score = 0;
-      scoreEl.innerText = 0;
-      isPhoneOut = false;
-      isInspectorComing = false;
-      phone.classList.remove('active');
-      inspector.classList.remove('active');
-      warning.style.display = 'none';
-      gameOverEl.style.display = 'none';
-      hands.classList.add('visible');
-      scheduleInspector();
-    }
+            playWarning() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                    osc.frequency.setValueAtTime(900, this.ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.2);
+                } catch(e){}
+            }
 
-    // Инициализация
-    hands.classList.add('visible');
-    loadVideo(0);
-    scheduleInspector();
-  </script>
+            playRadioBeep() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                    osc.frequency.setValueAtTime(1200, this.ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } catch(e){}
+            }
+
+            playBump() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.35);
+                    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.35);
+                } catch(e){}
+            }
+
+            playLoudTikTok() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.4);
+                } catch(e){}
+            }
+
+            playSwipe() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.06);
+                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.06);
+                } catch(e){}
+            }
+
+            playCaught() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.5);
+                } catch(e){}
+            }
+        }
+
+        const audioFX = new SoundEffects();
+
+        /* MP4 TIKTOK FEED SCANNER & LOADER */
+        const memeAuthors = ['@belaz_king', '@mikhali4_vip', '@rabotyaga777', '@zavod_live', '@minsk_dump', '@heavy_machinery', '@sobol_drives'];
+        const memeAudio = ['оригинальный звук - Михалыч', 'трек - БелАЗ на Базе', 'звук - Карьерный Дрифт', 'ремикс - Соляра и Термос'];
+        const memeDescs = [
+            "Заправил 5000 литров соляры и еду с ветерком! 🚚💨 #белаз #карьер",
+            "Первый отдел в белых касках опять ищет нарушителей, а я чаёк пью ☕🤫",
+            "Михалыч уснул прямо на панели контроллера 😴💤 #работяги",
+            "Колесо высотой 4 метра! Белаз 75710 — сила Беларуси! 🛞💥",
+            "Когда попросили сделать «ещё один рейсик» перед обедом 🥪😅",
+            "Обед по расписанию: колбаса, батон и термосок 🥖☕ #завод",
+            "Как выехать из карьера и не встретить начальника смены? 🛠️",
+            "Дрифт на 450-тонном самосвале! Подпишись! 🔥🎯"
+        ];
+
+        let availableVideos = [];
+        let loadedTikTokCount = 0;
+
+        // Automatically scan tiktok1.mp4 ... tiktok50.mp4
+        async function scanTikTokVideos() {
+            const maxVideos = 50;
+            const validVideos = [];
+            
+            const checkVideo = (src) => {
+                return new Promise((resolve) => {
+                    const video = document.createElement('video');
+                    video.onloadedmetadata = () => resolve(src);
+                    video.onerror = () => resolve(null);
+                    video.src = src;
+                });
+            };
+
+            const checks = [];
+            for (let i = 1; i <= maxVideos; i++) {
+                checks.push(checkVideo(`tiktok${i}.mp4`));
+            }
+
+            const results = await Promise.all(checks);
+            for (const res of results) {
+                if (res) validVideos.push(res);
+            }
+
+            if (validVideos.length > 0) {
+                availableVideos = validVideos;
+            } else {
+                // Fallback to tiktok1.mp4 default if scanning yields no metadata yet
+                availableVideos = ['tiktok1.mp4'];
+            }
+        }
+
+        // Run scanning immediately
+        scanTikTokVideos();
+
+        function createTikTokCard() {
+            loadedTikTokCount++;
+            const author = memeAuthors[Math.floor(Math.random() * memeAuthors.length)];
+            const audioTrack = memeAudio[Math.floor(Math.random() * memeAudio.length)];
+            const desc = memeDescs[Math.floor(Math.random() * memeDescs.length)];
+            const isLoud = Math.random() < 0.15; // 15% Loud TikTok Event
+            const isDouble = Math.random() < 0.20; // 20% x2 Bonus TikTok
+
+            // Pick video from discovered array or template pattern
+            const videoSrc = availableVideos.length > 0 
+                ? availableVideos[(loadedTikTokCount - 1) % availableVideos.length]
+                : `tiktok${((loadedTikTokCount - 1) % 50) + 1}.mp4`;
+
+            const card = document.createElement('div');
+            card.className = `tiktok-card relative w-full h-full min-h-[310px] sm:min-h-[380px] bg-black rounded-xl flex flex-col justify-between overflow-hidden mb-3 text-white snap-start shrink-0 ${isLoud ? 'border-4 border-red-500' : ''}`;
+            
+            card.setAttribute('data-loud', isLoud ? 'true' : 'false');
+            card.setAttribute('data-double', isDouble ? 'true' : 'false');
+
+            card.innerHTML = `
+                <!-- MP4 Video Background -->
+                <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
+                    <video class="w-full h-full object-cover" autoplay loop muted playsinline onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <source src="${videoSrc}" type="video/mp4">
+                    </video>
+                    <!-- Fallback UI if MP4 file missing -->
+                    <div class="hidden absolute inset-0 bg-slate-900 flex-col items-center justify-center p-4 text-center">
+                        <i class="fa-solid fa-video-slash text-4xl text-yellow-500 mb-2"></i>
+                        <span class="text-xs font-bold text-slate-300">Файл ${videoSrc} не найден</span>
+                    </div>
+                </div>
+
+                <!-- Overlay Header -->
+                <div class="relative z-10 flex items-center justify-between p-3">
+                    <span class="bg-black/60 backdrop-blur px-2 py-0.5 rounded-full text-[9px] font-bold">РЕКОМЕНДАЦИИ #${loadedTikTokCount}</span>
+                    ${isDouble ? '<span class="bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[9px] font-black animate-pulse">🔥 x2 BYN!</span>' : ''}
+                    ${isLoud ? '<span class="bg-red-600 text-white px-2 py-0.5 rounded-full text-[9px] font-black animate-bounce">🔊 ГРОМКИЙ ЗВУК!</span>' : ''}
+                </div>
+
+                <!-- TikTok Right Action Bar -->
+                <div class="absolute right-2 bottom-12 z-20 flex flex-col items-center gap-3">
+                    <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-800 flex items-center justify-center text-xs font-bold text-yellow-400">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <button class="like-btn w-9 h-9 bg-black/40 rounded-full flex items-center justify-center text-white hover:text-red-500 text-base active:scale-125 transition-transform">
+                            <i class="fa-solid fa-heart"></i>
+                        </button>
+                        <span class="text-[9px] font-bold mt-0.5">${(Math.random() * 80 + 5).toFixed(1)}K</span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <button class="w-9 h-9 bg-black/40 rounded-full flex items-center justify-center text-white text-base">
+                            <i class="fa-solid fa-comment-dots"></i>
+                        </button>
+                        <span class="text-[9px] font-bold mt-0.5">${(Math.random() * 20 + 1).toFixed(1)}K</span>
+                    </div>
+                    <div class="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center border border-white/20 animate-spin-disc">
+                        <i class="fa-solid fa-compact-disc text-amber-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Bottom TikTok Description & Audio Bar -->
+                <div class="relative z-10 p-3 max-w-[80%]">
+                    <div class="font-extrabold text-xs mb-0.5 text-yellow-300 drop-shadow">${author}</div>
+                    <p class="text-[11px] text-slate-100 leading-snug line-clamp-3 mb-2 drop-shadow">${desc}</p>
+                    <div class="flex items-center gap-1.5 text-[9px] text-slate-300 font-semibold">
+                        <i class="fa-solid fa-music text-yellow-400 animate-pulse"></i>
+                        <span class="truncate">${audioTrack}</span>
+                    </div>
+                </div>
+            `;
+
+            // Like Action Effect
+            const likeBtn = card.querySelector('.like-btn');
+            likeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                likeBtn.classList.add('text-red-500');
+                audioFX.playSwipe();
+                
+                // Spawn Heart
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart fa-solid fa-heart';
+                heart.style.left = `${e.clientX - 20}px`;
+                heart.style.top = `${e.clientY - 20}px`;
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), 800);
+            });
+
+            return card;
+        }
+
+        function appendMoreTikToks(count = 5) {
+            for (let i = 0; i < count; i++) {
+                tiktokFeed.appendChild(createTikTokCard());
+            }
+        }
+
+        /* GAME STATE & DIFFICULTY ENGINE */
+        let gameState = {
+            isRunning: false,
+            isPhoneVisible: true,
+            scoreSeconds: 0,
+            moneyEarned: 0,
+            level: 1,
+            productivity: 100, // Slack meter
+            bossApproaching: false,
+            bossArrived: false,
+            isFakeAlarm: false,
+            radioActive: false,
+            bossTimer: null,
+            warningTimer: null,
+            radioTimer: null,
+            scoreInterval: null,
+            randomEventsInterval: null
+        };
+
+        // DOM elements
+        const phoneWrapper = document.getElementById('phone-wrapper');
+        const unhideZone = document.getElementById('unhide-zone');
+        const handsOnWheel = document.getElementById('hands-on-wheel');
+        const warningBox = document.getElementById('warning-box');
+        const warningTitle = document.getElementById('warning-title');
+        const warningText = document.getElementById('warning-text');
+        const bossCharacter = document.getElementById('boss-character');
+        const fakePasserby = document.getElementById('fake-passerby');
+        const scoreDisplay = document.getElementById('score-display');
+        const moneyDisplay = document.getElementById('money-display');
+        const levelDisplay = document.getElementById('level-display');
+        const productivityBar = document.getElementById('productivity-bar');
+        const productivityLabel = document.getElementById('productivity-label');
+        const workerBubble = document.getElementById('worker-bubble');
+        const workerText = document.getElementById('worker-text');
+        const tiktokFeed = document.getElementById('tiktok-feed');
+        const startScreen = document.getElementById('start-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const finalScore = document.getElementById('final-score');
+        const finalMoney = document.getElementById('final-money');
+        const gameoverReason = document.getElementById('gameover-reason');
+        const gameoverCauseText = document.getElementById('gameover-cause-text');
+        const radioBtn = document.getElementById('radio-btn');
+        const radioIcon = document.getElementById('radio-icon');
+        const radioText = document.getElementById('radio-text');
+        const mobileRadioContainer = document.getElementById('mobile-radio-container');
+
+        function triggerVibration(pattern) {
+            if ("vibrate" in navigator) {
+                try { navigator.vibrate(pattern); } catch(e){}
+            }
+        }
+
+        function startGame() {
+            audioFX.init();
+            
+            gameState.isRunning = true;
+            gameState.scoreSeconds = 0;
+            gameState.moneyEarned = 0;
+            gameState.level = 1;
+            gameState.productivity = 100;
+            gameState.bossApproaching = false;
+            gameState.bossArrived = false;
+            gameState.radioActive = false;
+
+            scoreDisplay.innerText = "00:00";
+            moneyDisplay.innerText = "0 BYN";
+            levelDisplay.innerText = "Ур. 1";
+
+            startScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+
+            tiktokFeed.innerHTML = '';
+            loadedTikTokCount = 0;
+            appendMoreTikToks(6);
+
+            showPhone();
+            resetRadioState();
+
+            gameState.scoreInterval = setInterval(updateScoreAndDifficulty, 1000);
+            gameState.randomEventsInterval = setInterval(handleRandomEvents, 5000);
+            
+            scheduleNextBossVisit();
+        }
+
+        function updateScoreAndDifficulty() {
+            if (!gameState.isRunning) return;
+            gameState.scoreSeconds++;
+
+            // Format Timer
+            const mins = Math.floor(gameState.scoreSeconds / 60).toString().padStart(2, '0');
+            const secs = (gameState.scoreSeconds % 60).toString().padStart(2, '0');
+            scoreDisplay.innerText = `${mins}:${secs}`;
+
+            // Increase Difficulty Level every 20 seconds
+            gameState.level = Math.floor(gameState.scoreSeconds / 20) + 1;
+            levelDisplay.innerText = `Ур. ${gameState.level}`;
+
+            // Productivity Mechanics (Slack Penalty when phone is hidden)
+            if (!gameState.isPhoneVisible) {
+                gameState.productivity = Math.max(0, gameState.productivity - 4);
+                if (gameState.productivity < 30) {
+                    showWorkerPhrase("Эй! План стоит! Доставай сотовый личико поднять!", true);
+                }
+                if (gameState.productivity <= 0) {
+                    gameOver("Провален план выработки! Тебя уволили за безделье!", "Нулевая производительность");
+                    return;
+                }
+            } else {
+                gameState.productivity = Math.min(100, gameState.productivity + 2);
+                
+                // Income logic based on active TikTok card
+                const visibleCard = getCurrentlyVisibleTikTokCard();
+                let multiplier = 1;
+                if (visibleCard && visibleCard.getAttribute('data-double') === 'true') {
+                    multiplier = 2;
+                }
+                gameState.moneyEarned += (Math.floor(Math.random() * 3) + 2) * multiplier;
+                moneyDisplay.innerText = `${gameState.moneyEarned} BYN`;
+
+                // Loud TikTok trigger panic
+                if (visibleCard && visibleCard.getAttribute('data-loud') === 'true' && Math.random() < 0.2) {
+                    audioFX.playLoudTikTok();
+                    showWorkerPhrase("Тише! Динамик зарипел на всю кабину!", true);
+                }
+            }
+
+            // Update Productivity Bar UI
+            productivityBar.style.width = `${gameState.productivity}%`;
+            productivityLabel.innerText = `План Выработки: ${gameState.productivity}%`;
+        }
+
+        function getCurrentlyVisibleTikTokCard() {
+            const cards = document.querySelectorAll('.tiktok-card');
+            for (let card of cards) {
+                const rect = card.getBoundingClientRect();
+                if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+                    return card;
+                }
+            }
+            return null;
+        }
+
+        function hidePhone() {
+            if (!gameState.isRunning) return;
+            gameState.isPhoneVisible = false;
+
+            phoneWrapper.classList.remove('phone-visible');
+            phoneWrapper.classList.add('phone-hidden');
+            
+            unhideZone.classList.remove('opacity-0', 'pointer-events-none');
+            handsOnWheel.classList.remove('opacity-0');
+
+            audioFX.playSwipe();
+            triggerVibration(30);
+        }
+
+        function showPhone() {
+            if (!gameState.isRunning) return;
+            gameState.isPhoneVisible = true;
+
+            phoneWrapper.classList.remove('phone-hidden');
+            phoneWrapper.classList.add('phone-visible');
+
+            unhideZone.classList.add('opacity-0', 'pointer-events-none');
+            handsOnWheel.classList.add('opacity-0');
+
+            audioFX.playSwipe();
+            triggerVibration(30);
+        }
+
+        /* INSPECTOR & FAKE ALARMS LOGIC */
+        function scheduleNextBossVisit() {
+            if (!gameState.isRunning) return;
+            const baseDelay = Math.max(2500, 7000 - gameState.level * 600);
+            const randomDelay = Math.floor(Math.random() * 3000) + baseDelay;
+
+            gameState.bossTimer = setTimeout(() => {
+                if (Math.random() < 0.3) {
+                    triggerFakeAlarm();
+                } else {
+                    triggerBossWarning();
+                }
+            }, randomDelay);
+        }
+
+        function triggerFakeAlarm() {
+            if (!gameState.isRunning) return;
+            gameState.isFakeAlarm = true;
+
+            warningTitle.innerText = "ШУМ ЗА ОКНОМ?";
+            warningText.innerText = "КТО-ТО ИДЕТ...";
+            warningBox.classList.remove('opacity-0', 'scale-90', 'bg-red-950/95');
+            warningBox.classList.add('opacity-100', 'scale-100', 'bg-amber-950/95');
+
+            audioFX.playFootsteps();
+            fakePasserby.classList.remove('translate-y-full');
+            showWorkerPhrase("Кажется, это просто Вася из цеха прошёл...", false);
+
+            setTimeout(() => {
+                fakePasserby.classList.add('translate-y-full');
+                warningBox.classList.add('opacity-0', 'scale-90');
+                warningBox.classList.remove('opacity-100', 'scale-100');
+                gameState.isFakeAlarm = false;
+                scheduleNextBossVisit();
+            }, 1800);
+        }
+
+        function triggerBossWarning() {
+            if (!gameState.isRunning) return;
+            gameState.bossApproaching = true;
+
+            warningTitle.innerText = "ОПАСНОСТЬ!";
+            warningText.innerText = "ПЕРВЫЙ ОТДЕЛ!";
+            warningBox.classList.remove('opacity-0', 'scale-90', 'bg-amber-950/95');
+            warningBox.classList.add('opacity-100', 'scale-100', 'bg-red-950/95');
+
+            audioFX.playWarning();
+            triggerVibration([100, 50, 100, 50, 100]);
+
+            let stepsCount = 0;
+            const stepsInterval = setInterval(() => {
+                if (!gameState.bossApproaching) {
+                    clearInterval(stepsInterval);
+                    return;
+                }
+                audioFX.playFootsteps();
+                stepsCount++;
+                if (stepsCount >= 3) clearInterval(stepsInterval);
+            }, 350);
+
+            document.getElementById('cabin-viewport').classList.add('shake');
+            showWorkerPhrase("БЕЛАЯ КАСКА НА ЛЕСТНИЦЕ! СПРЯЧЬ ТЕЛЕФОН!", true);
+
+            const reactionWindow = Math.max(800, 2000 - gameState.level * 180);
+
+            gameState.warningTimer = setTimeout(() => {
+                triggerBossArrive();
+            }, reactionWindow);
+        }
+
+        function triggerBossArrive() {
+            if (!gameState.isRunning) return;
+            gameState.bossArrived = true;
+            document.getElementById('cabin-viewport').classList.remove('shake');
+
+            bossCharacter.classList.remove('translate-y-full');
+
+            setTimeout(() => {
+                if (gameState.isPhoneVisible) {
+                    gameOver("Инспектор в белой каске засек тебя со смартфоном!", "Первый Отдел (Белая Каска)");
+                } else {
+                    setTimeout(() => {
+                        bossLeaves();
+                    }, 1400);
+                }
+            }, 200);
+        }
+
+        function bossLeaves() {
+            bossCharacter.classList.add('translate-y-full');
+            warningBox.classList.add('opacity-0', 'scale-90');
+            warningBox.classList.remove('opacity-100', 'scale-100');
+
+            gameState.bossApproaching = false;
+            gameState.bossArrived = false;
+
+            scheduleNextBossVisit();
+        }
+
+        /* RANDOM EVENTS: BUMPS & RADIO CALLS */
+        function handleRandomEvents() {
+            if (!gameState.isRunning || gameState.bossApproaching) return;
+
+            const rand = Math.random();
+            if (rand < 0.25) {
+                const viewport = document.getElementById('cabin-viewport');
+                viewport.classList.add('bump-anim');
+                audioFX.playBump();
+                triggerVibration(150);
+                showWorkerPhrase("ОГО! Наехал на огромный булыжник!", true);
+
+                setTimeout(() => viewport.classList.remove('bump-anim'), 500);
+            } else if (rand > 0.70 && !gameState.radioActive) {
+                triggerRadioCall();
+            }
+        }
+
+        function triggerRadioCall() {
+            gameState.radioActive = true;
+            audioFX.playRadioBeep();
+            
+            radioIcon.className = "fa-solid fa-walkie-talkie text-red-500 animate-ping text-xs";
+            radioText.innerText = "ВЫЗОВ ДИСПЕТЧЕРА!";
+            radioBtn.className = "pointer-events-auto h-9 bg-red-900 border-2 border-yellow-400 rounded-lg flex items-center justify-around px-2 animate-bounce";
+
+            mobileRadioContainer.classList.remove('opacity-0', 'pointer-events-none');
+            showWorkerPhrase("Диспетчер вызываeт по рации! Жми кнопку!", true);
+
+            gameState.radioTimer = setTimeout(() => {
+                if (gameState.radioActive && gameState.isRunning) {
+                    gameOver("Ты проигнорировал вызов диспетчера! Вызвана проверка!", "Игнорирование рации");
+                }
+            }, 3500);
+        }
+
+        function answerRadio() {
+            if (!gameState.radioActive) return;
+            gameState.radioActive = false;
+            clearTimeout(gameState.radioTimer);
+
+            resetRadioState();
+            showWorkerPhrase("Доложил: «Всё в норме, везу соляру!»", false);
+            audioFX.playSwipe();
+        }
+
+        function resetRadioState() {
+            radioIcon.className = "fa-solid fa-walkie-talkie text-slate-500 text-xs";
+            radioText.innerText = "РАЦИЯ МОЛЧИТ";
+            radioBtn.className = "pointer-events-auto h-9 bg-neutral-900 border-2 border-red-900 rounded-lg flex items-center justify-around px-2";
+            mobileRadioContainer.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        /* MIKHALYCH COMIC PHRASES */
+        function showWorkerPhrase(text, urgent = false) {
+            workerText.innerText = text;
+            if (urgent) {
+                workerBubble.style.borderColor = "#dc2626";
+            } else {
+                workerBubble.style.borderColor = "#000000";
+            }
+            workerBubble.classList.remove('opacity-0');
+            setTimeout(() => {
+                workerBubble.classList.add('opacity-0');
+            }, 2800);
+        }
+
+        function gameOver(reasonText, causeText) {
+            gameState.isRunning = false;
+            audioFX.playCaught();
+            triggerVibration([300, 100, 300]);
+
+            clearTimeout(gameState.bossTimer);
+            clearTimeout(gameState.warningTimer);
+            clearTimeout(gameState.radioTimer);
+            clearInterval(gameState.scoreInterval);
+            clearInterval(gameState.randomEventsInterval);
+
+            const mins = Math.floor(gameState.scoreSeconds / 60).toString().padStart(2, '0');
+            const secs = (gameState.scoreSeconds % 60).toString().padStart(2, '0');
+            finalScore.innerText = `${mins}:${secs}`;
+            finalMoney.innerText = `${gameState.moneyEarned} BYN`;
+            gameoverReason.innerText = reasonText;
+            gameoverCauseText.innerText = causeText;
+
+            gameoverScreen.classList.remove('hidden');
+        }
+
+        /* TOUCH & EVENT BINDINGS */
+        function bindTouch(element, callback) {
+            let touched = false;
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touched = true;
+                callback(e);
+            }, { passive: false });
+
+            element.addEventListener('click', (e) => {
+                if (touched) {
+                    touched = false;
+                    return;
+                }
+                callback(e);
+            });
+        }
+
+        bindTouch(document.getElementById('hide-btn'), hidePhone);
+        bindTouch(document.getElementById('unhide-btn'), showPhone);
+        bindTouch(document.getElementById('start-btn'), startGame);
+        bindTouch(document.getElementById('restart-btn'), startGame);
+        bindTouch(radioBtn, answerRadio);
+        bindTouch(document.getElementById('mobile-radio-btn'), answerRadio);
+
+        // Keyboard Controls
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState.isPhoneVisible) hidePhone(); else showPhone();
+            } else if (e.code === 'KeyR') {
+                answerRadio();
+            }
+        });
+
+        // Sound Toggle
+        const soundBtn = document.getElementById('sound-btn');
+        bindTouch(soundBtn, () => {
+            audioFX.muted = !audioFX.muted;
+            soundBtn.innerHTML = audioFX.muted ? 
+                '<i class="fa-solid fa-volume-xmark text-base text-red-400"></i>' : 
+                '<i class="fa-solid fa-volume-high text-base"></i>';
+        });
+
+        // Endless Feed Scroll Listener
+        tiktokFeed.addEventListener('scroll', () => {
+            audioFX.playSwipe();
+            if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 400) {
+                appendMoreTikToks(4);
+            }
+        }, { passive: true });
+
+        // Prevent Double Tap Zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (event) => {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+    </script>
 </body>
 </html>

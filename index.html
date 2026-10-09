@@ -839,6 +839,22 @@
             document.getElementById('cabin-viewport').classList.remove('shake', 'bump-anim');
         }
 
+        function returnToMainMenu() {
+            gameState.isRunning = false;
+            pauseAllVideos();
+            resetBossAndState();
+
+            clearTimeout(gameState.bossTimer);
+            clearTimeout(gameState.warningTimer);
+            clearTimeout(gameState.radioTimer);
+            clearInterval(gameState.scoreInterval);
+            clearInterval(gameState.randomEventsInterval);
+
+            gameoverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            audioFX.playSwipe();
+        }
+
         function startGame() {
             audioFX.init();
             
@@ -1182,7 +1198,7 @@
         bindTouch(document.getElementById('hide-btn'), hidePhone);
         bindTouch(document.getElementById('unhide-btn'), showPhone);
         bindTouch(document.getElementById('start-btn'), startGame);
-        bindTouch(document.getElementById('restart-btn'), startGame);
+        bindTouch(document.getElementById('restart-btn'), returnToMainMenu);
         bindTouch(radioBtn, answerRadio);
         bindTouch(document.getElementById('mobile-radio-btn'), answerRadio);
 

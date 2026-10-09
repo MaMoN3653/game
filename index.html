@@ -1250,26 +1250,35 @@
             saveLeaderboardScore(gameState.playerName, gameState.scoreSeconds, gameState.moneyEarned);
         }
 
-        /* LEADERBOARD FIREBASE API - UNIQUE NICKNAMES ONLY */
+        /* LEADERBOARD FIREBASE API - UNIQUE NICKNAMES ONLY & AUTO-CLEANUP */
         function saveLeaderboardScore(name, seconds, money) {
             if (seconds <= 0) return;
             
             const leaderboardRef = db.ref('leaderboard');
             
-            // Search if nickname already exists
             leaderboardRef.orderByChild('name').equalTo(name).once('value', (snapshot) => {
                 if (snapshot.exists()) {
-                    let existingKey = null;
-                    let existingScore = 0;
+                    let bestKey = null;
+                    let bestScore = -1;
+                    const keysToRemove = [];
 
                     snapshot.forEach((child) => {
-                        existingKey = child.key;
-                        existingScore = child.val().seconds || 0;
+                        const score = child.val().seconds || 0;
+                        if (score > bestScore) {
+                            if (bestKey) keysToRemove.push(bestKey);
+                            bestScore = score;
+                            bestKey = child.key;
+                        } else {
+                            keysToRemove.push(child.key);
+                        }
                     });
 
-                    // Update only if new score is HIGHER
-                    if (seconds > existingScore) {
-                        leaderboardRef.child(existingKey).update({
+                    // Delete extra duplicates if any existed
+                    keysToRemove.forEach(k => leaderboardRef.child(k).remove());
+
+                    // Update existing record if new score is higher
+                    if (seconds > bestScore) {
+                        leaderboardRef.child(bestKey).update({
                             seconds: seconds,
                             money: money,
                             timestamp: Date.now()
@@ -1293,15 +1302,33 @@
             
             db.ref('leaderboard')
               .once('value', (snapshot) => {
-                  const records = [];
+                  const uniqueRecordsMap = new Map();
+                  const duplicatesToDelete = [];
+
                   snapshot.forEach((child) => {
-                      records.push(child.val());
+                      const data = child.val();
+                      const name = data.name || 'Работяга';
+                      const key = child.key;
+
+                      if (!uniqueRecordsMap.has(name)) {
+                          uniqueRecordsMap.set(name, { ...data, key: key });
+                      } else {
+                          const existing = uniqueRecordsMap.get(name);
+                          if ((data.seconds || 0) > (existing.seconds || 0)) {
+                              duplicatesToDelete.push(existing.key);
+                              uniqueRecordsMap.set(name, { ...data, key: key });
+                          } else {
+                              duplicatesToDelete.push(key);
+                          }
+                      }
                   });
-                  
-                  // Sort descending by seconds
+
+                  // Automatically remove all old duplicate records from Firebase
+                  duplicatesToDelete.forEach(k => db.ref('leaderboard').child(k).remove());
+
+                  const records = Array.from(uniqueRecordsMap.values());
                   records.sort((a, b) => b.seconds - a.seconds);
 
-                  // Keep top 10
                   const topRecords = records.slice(0, 10);
 
                   if (topRecords.length === 0) {

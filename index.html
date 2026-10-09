@@ -36,7 +36,6 @@
             font-family: 'Press Start 2P', monospace;
         }
 
-        /* Smooth phone slide down/up animation */
         .phone-container {
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: transform;
@@ -51,7 +50,6 @@
             transform: translate(-50%, 0) !important;
         }
 
-        /* Cabin Shake on Boss Step / Road Bump */
         @keyframes cabinShake {
             0% { transform: translate(0, 0) rotate(0deg); }
             25% { transform: translate(-5px, 6px) rotate(-1deg); }
@@ -75,7 +73,6 @@
             animation: hardBump 0.45s ease-out;
         }
 
-        /* Engine gentle vibe */
         @keyframes engineVibe {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(1.5px); }
@@ -85,7 +82,6 @@
             animation: engineVibe 0.18s ease-in-out infinite;
         }
 
-        /* Rotating Music Disc */
         @keyframes spinSlow {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -94,7 +90,6 @@
             animation: spinSlow 4s linear infinite;
         }
 
-        /* Scrollbar hide for endless feed */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -103,7 +98,6 @@
             scrollbar-width: none;
         }
 
-        /* Comic speech bubble styling */
         .speech-bubble {
             position: relative;
             background: #ffffff;
@@ -135,7 +129,6 @@
             width: 0;
         }
 
-        /* Floating Hearts Animation */
         @keyframes floatHeart {
             0% { transform: translateY(0) scale(0.8); opacity: 1; }
             100% { transform: translateY(-80px) scale(1.4); opacity: 0; }
@@ -156,7 +149,6 @@
 
         <!-- TOP BAR UI OVERLAY -->
         <div class="absolute top-2 left-2 right-2 z-30 flex justify-between items-center pointer-events-none">
-            <!-- Score & Stats -->
             <div class="bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-yellow-500/50 flex items-center gap-2 sm:gap-4 shadow-2xl">
                 <div>
                     <div class="text-[9px] sm:text-xs text-yellow-400 font-bold uppercase tracking-wider">Смена</div>
@@ -174,7 +166,6 @@
                 </div>
             </div>
 
-            <!-- Danger / Warning Indicator -->
             <div id="warning-box" class="bg-red-950/95 backdrop-blur-md border-2 border-red-600 px-3 py-1.5 rounded-2xl flex items-center gap-2 opacity-0 transition-all duration-150 transform scale-90 shadow-red-900/60 shadow-xl">
                 <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg animate-ping"></i>
                 <div>
@@ -183,7 +174,6 @@
                 </div>
             </div>
 
-            <!-- Sound toggle -->
             <div class="pointer-events-auto">
                 <button id="sound-btn" class="w-10 h-10 bg-slate-800/90 active:bg-slate-700 border border-slate-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
                     <i class="fa-solid fa-volume-high text-base"></i>
@@ -191,7 +181,6 @@
             </div>
         </div>
 
-        <!-- WORK PRODUCTIVITY BAR (SLACKING PENALTY) -->
         <div class="absolute top-16 left-2 right-2 z-20 pointer-events-none flex flex-col items-center">
             <div class="w-full max-w-xs bg-black/75 backdrop-blur rounded-full h-3 border border-slate-700 p-0.5 overflow-hidden shadow-lg flex items-center">
                 <div id="productivity-bar" class="h-full bg-gradient-to-r from-emerald-500 via-yellow-400 to-green-400 rounded-full w-full transition-all duration-300"></div>
@@ -199,10 +188,8 @@
             <span id="productivity-label" class="text-[9px] font-black tracking-widest uppercase text-slate-300 mt-0.5 drop-shadow">План Выработки: 100%</span>
         </div>
 
-        <!-- MAIN VIEWPORT / CABIN -->
+        <!-- CABIN VIEWPORT -->
         <div id="cabin-viewport" class="relative w-full h-full engine-idle flex-1 bg-slate-800 overflow-hidden">
-            
-            <!-- Windshield View: Quarry Landscape -->
             <div class="absolute top-0 left-0 right-0 h-3/5 bg-gradient-to-b from-sky-400 via-amber-200 to-amber-600 overflow-hidden">
                 <svg class="absolute bottom-0 w-full h-36 text-amber-800/80" viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,96 L48,85.3 C96,75,192,53,288,58.7 C384,64,480,96,576,96 C672,96,768,64,864,58.7 C960,53,1056,75,1104,85.3 L1152,96 L1152,120 L0,120 Z" fill="currentColor"></path>
@@ -210,31 +197,23 @@
                 <svg class="absolute bottom-0 w-full h-24 text-amber-900" viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,40 L80,50 C160,60,320,80,480,75 C640,70,800,40,960,45 C1120,50,1200,70,1280,80 L1280,120 L0,120 Z" fill="currentColor"></path>
                 </svg>
-
                 <div class="absolute inset-0 bg-yellow-900/10 mix-blend-overlay"></div>
-
-                <!-- Windshield Pillars -->
                 <div class="absolute inset-0 border-x-[20px] sm:border-x-[40px] border-t-[10px] border-amber-950/90 pointer-events-none"></div>
                 <div class="absolute left-1/3 top-0 bottom-0 w-3 sm:w-4 bg-amber-950/80 transform -skew-x-12"></div>
                 <div class="absolute right-1/3 top-0 bottom-0 w-3 sm:w-4 bg-amber-950/80 transform skew-x-12"></div>
             </div>
 
-            <!-- CABIN SIDE WINDOW & INSPECTOR / PASSERBY SPRITES -->
             <div class="absolute top-8 right-2 sm:right-6 w-36 sm:w-56 h-52 sm:h-72 border-4 sm:border-8 border-yellow-600/90 bg-slate-900/95 rounded-t-3xl overflow-hidden shadow-2xl z-10">
                 <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent z-20 pointer-events-none"></div>
                 
-                <!-- INSPECTOR (FIRST DEPARTMENT - WHITE HELMET) -->
                 <div id="boss-character" class="absolute inset-0 flex flex-col items-center justify-end transform translate-y-full transition-transform duration-200 z-10">
                     <div class="relative w-32 sm:w-44 h-48 sm:h-60 flex flex-col items-center">
-                        <!-- WHITE CONSTRUCTION HELMET -->
                         <div class="w-22 sm:w-30 h-9 sm:h-12 bg-slate-100 rounded-t-full border-b-2 sm:border-b-4 border-slate-300 relative flex items-center justify-center shadow-lg z-20">
                             <div class="w-5 h-5 sm:w-7 sm:h-7 bg-red-600 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] text-white font-black border border-white">
                                 <i class="fa-solid fa-shield-halved"></i>
                             </div>
                             <div class="absolute -bottom-1.5 w-26 sm:w-36 h-2.5 sm:h-3.5 bg-slate-200 border-b-2 border-slate-400 rounded-full shadow-md"></div>
                         </div>
-
-                        <!-- Face -->
                         <div class="w-14 sm:w-20 h-14 sm:h-20 bg-amber-200 rounded-2xl relative border-2 border-amber-400 -mt-1 flex flex-col items-center justify-center z-10">
                             <div class="flex gap-1.5 mt-1">
                                 <div class="w-3 sm:w-5 h-1.5 bg-black transform rotate-12"></div>
@@ -250,8 +229,6 @@
                             </div>
                             <div class="w-8 sm:w-12 h-2.5 sm:h-3 bg-neutral-900 rounded-full mt-1.5"></div>
                         </div>
-
-                        <!-- Suit Body -->
                         <div class="w-28 sm:w-36 h-28 sm:h-36 bg-slate-900 rounded-t-3xl border-t-2 border-slate-700 flex flex-col items-center pt-2">
                             <div class="w-8 sm:w-10 h-12 sm:h-16 bg-white clip-triangle flex flex-col items-center">
                                 <div class="w-2 sm:w-3 h-10 bg-red-700"></div>
@@ -260,7 +237,6 @@
                     </div>
                 </div>
 
-                <!-- FAKE ALARM PASSERBY (ORANGE VEST WORKER) -->
                 <div id="fake-passerby" class="absolute inset-0 flex flex-col items-center justify-end transform translate-y-full transition-transform duration-300 z-10">
                     <div class="relative w-28 sm:w-36 h-40 sm:h-48 flex flex-col items-center opacity-80">
                         <div class="w-16 sm:w-20 h-7 sm:h-9 bg-orange-500 rounded-t-full border-b-2 border-orange-700"></div>
@@ -274,13 +250,8 @@
                 </div>
             </div>
 
-            <!-- DASHBOARD & STEERING WHEEL -->
             <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-neutral-900 border-t-4 sm:border-t-8 border-neutral-800 rounded-t-3xl shadow-inner z-10 flex justify-between items-end px-2 sm:px-8 pb-2">
-                
-                <!-- WORKER PARTNER (МИХАЛЫЧ - LEFT SIDE) -->
                 <div class="relative w-32 sm:w-52 h-44 sm:h-64 flex flex-col items-center -ml-1 sm:-ml-4 z-20">
-                    
-                    <!-- HIGH-VISIBILITY COMIC SPEECH BUBBLE -->
                     <div id="worker-bubble" class="speech-bubble absolute -top-24 sm:-top-28 left-0 sm:-left-6 w-48 sm:w-64 p-2 sm:p-3 text-xs sm:text-sm font-extrabold text-black z-40 opacity-0 transition-all duration-200 pointer-events-none leading-tight">
                         <span id="worker-text">«Спрячь сотовый, Михалыч не дремет!»</span>
                     </div>
@@ -299,7 +270,6 @@
                     </div>
                 </div>
 
-                <!-- STEERING WHEEL -->
                 <div class="relative w-44 h-44 sm:w-72 sm:h-72 rounded-full border-[12px] sm:border-[22px] border-neutral-800 bg-transparent flex items-center justify-center shadow-2xl transform translate-y-12 sm:translate-y-20">
                     <div class="absolute w-full h-3 sm:h-6 bg-neutral-800"></div>
                     <div class="absolute h-full w-3 sm:w-6 bg-neutral-800"></div>
@@ -307,14 +277,12 @@
                         <span class="font-black text-black tracking-tighter text-[10px] sm:text-sm italic">БЕЛАЗ</span>
                     </div>
 
-                    <!-- Hands on Steering Wheel -->
                     <div id="hands-on-wheel" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-150">
                         <div class="absolute top-6 left-1 sm:top-12 sm:left-2 w-8 h-10 sm:w-12 sm:h-16 bg-amber-300 rounded-full border border-amber-500 transform -rotate-45"></div>
                         <div class="absolute top-6 right-1 sm:top-12 sm:right-2 w-8 h-10 sm:w-12 sm:h-16 bg-amber-300 rounded-full border border-amber-500 transform rotate-45"></div>
                     </div>
                 </div>
 
-                <!-- DASHBOARD INTERACTIVE RADIO UNIT -->
                 <div class="w-28 sm:w-48 h-28 sm:h-40 bg-neutral-800 rounded-xl border border-neutral-700 p-2 flex flex-col justify-between hidden sm:flex">
                     <div class="flex justify-around">
                         <div class="w-10 h-10 rounded-full border-2 border-yellow-500 bg-black flex items-center justify-center relative">
@@ -327,17 +295,14 @@
                         </div>
                     </div>
 
-                    <!-- RADIO EVENT BUTTON -->
                     <button id="radio-btn" class="pointer-events-auto h-9 bg-neutral-900 border-2 border-red-900 rounded-lg flex items-center justify-around px-2 active:scale-95 transition-all">
                         <i id="radio-icon" class="fa-solid fa-walkie-talkie text-slate-500 text-xs"></i>
                         <span id="radio-text" class="text-[9px] font-bold text-slate-400">РАЦИЯ МОЛЧИТ</span>
                     </button>
                 </div>
-
             </div>
         </div>
 
-        <!-- MOBILE RADIO BUTTON FLOATING OVERLAY -->
         <div id="mobile-radio-container" class="absolute top-28 left-3 z-30 sm:hidden opacity-0 pointer-events-none transition-opacity duration-200">
             <button id="mobile-radio-btn" class="bg-red-600 active:bg-red-700 text-white text-xs font-black px-3 py-2 rounded-xl border-2 border-yellow-300 shadow-2xl flex items-center gap-2 animate-bounce">
                 <i class="fa-solid fa-walkie-talkie text-base"></i>
@@ -345,30 +310,33 @@
             </button>
         </div>
 
-        <!-- SMARTPHONE CONTAINER WITH SMOOTH ANIMATION -->
+        <!-- SMARTPHONE CONTAINER -->
         <div id="phone-wrapper" class="absolute bottom-2 left-1/2 z-40 phone-container phone-visible">
             
             <div class="relative w-[250px] sm:w-[290px] h-[390px] sm:h-[490px] bg-black rounded-[36px] p-2.5 border-4 border-slate-700 shadow-2xl flex flex-col justify-between">
                 
-                <!-- Phone Top Notch -->
                 <div class="absolute top-3 left-1/2 transform -translate-x-1/2 w-20 h-3 bg-black rounded-b-lg z-50 flex justify-center items-center">
                     <div class="w-6 h-1 bg-neutral-800 rounded-full"></div>
                 </div>
 
-                <!-- Phone Screen -->
+                <!-- PHONE SCREEN -->
                 <div id="phone-screen" class="relative w-full h-full bg-slate-900 rounded-[28px] overflow-hidden flex flex-col justify-between border border-neutral-800">
                     
                     <!-- Status Bar -->
                     <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent">
                         <span>14:32</span>
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-2">
+                            <!-- TikTok Audio Mute Toggle Button -->
+                            <button id="video-mute-toggle" class="text-white hover:text-yellow-400 transition-colors">
+                                <i id="video-mute-icon" class="fa-solid fa-volume-xmark text-[10px] text-red-400"></i>
+                            </button>
                             <span class="text-[8px]">4G</span>
                             <i class="fa-solid fa-battery-three-quarters text-[9px] text-green-400"></i>
                         </div>
                     </div>
 
-                    <!-- ENDLESS TIKTOK FEED WITH MP4 VIDEO CONTENT -->
-                    <div id="tiktok-feed" class="absolute inset-0 pt-5 pb-8 flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y">
+                    <!-- ENDLESS TIKTOK FEED WITH SMOOTH SWIPES -->
+                    <div id="tiktok-feed" class="absolute inset-0 pt-5 pb-8 flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y" style="-webkit-overflow-scrolling: touch;">
                         <!-- TikTok Cards inserted dynamically -->
                     </div>
 
@@ -386,14 +354,12 @@
                 </div>
             </div>
 
-            <!-- HIDE BUTTON FOR TOUCH DEVICES -->
             <button id="hide-btn" class="mt-2 w-full bg-red-600 active:bg-red-700 text-white font-black py-3 px-2 rounded-2xl shadow-xl border-2 border-red-400 flex items-center justify-center gap-2 text-sm sm:text-base">
                 <i class="fa-solid fa-hand text-lg"></i>
                 СПРЯТАТЬ (ПРОБЕЛ)
             </button>
         </div>
 
-        <!-- UNHIDE BUTTON OVERLAY -->
         <div id="unhide-zone" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 opacity-0 pointer-events-none transition-all duration-200 w-11/12 max-w-xs">
             <button id="unhide-btn" class="w-full bg-emerald-500 active:bg-emerald-600 text-slate-950 font-black text-base sm:text-lg py-4 px-6 rounded-full shadow-2xl border-4 border-emerald-300 flex items-center justify-center gap-3 animate-bounce">
                 <i class="fa-solid fa-mobile-screen-button text-2xl"></i>
@@ -442,7 +408,6 @@
             <h2 class="text-2xl sm:text-3xl font-black text-white mb-1">СМЕНА ПРОВАЛЕНА!</h2>
             <p id="gameover-reason" class="text-red-200 text-xs mb-4 font-semibold">Первый отдел застукал тебя со смартфоном!</p>
 
-            <!-- Dismissal Notice -->
             <div class="bg-amber-50 rounded-xl p-4 text-slate-900 max-w-xs sm:max-w-md w-full shadow-2xl border-4 border-amber-200 text-left mb-5 relative rotate-1">
                 <div class="absolute top-3 right-3 border-2 border-red-600 text-red-600 font-black px-2 py-0.5 rounded text-[10px] tracking-widest transform rotate-12 uppercase">
                     УВОЛЕН
@@ -466,7 +431,7 @@
     </div>
 
     <script>
-        /* WEB AUDIO ENGINE & SOUND EFFECTS */
+        /* WEB AUDIO ENGINE */
         class SoundEffects {
             constructor() {
                 this.ctx = null;
@@ -605,7 +570,7 @@
 
         const audioFX = new SoundEffects();
 
-        /* MP4 TIKTOK FEED SCANNER & LOADER */
+        /* TIKTOK MP4 SCANNER & AUDIO CONTROLLER */
         const memeAuthors = ['@belaz_king', '@mikhali4_vip', '@rabotyaga777', '@zavod_live', '@minsk_dump', '@heavy_machinery', '@sobol_drives'];
         const memeAudio = ['оригинальный звук - Михалыч', 'трек - БелАЗ на Базе', 'звук - Карьерный Дрифт', 'ремикс - Соляра и Термос'];
         const memeDescs = [
@@ -621,8 +586,8 @@
 
         let availableVideos = [];
         let loadedTikTokCount = 0;
+        let isVideoSoundUnmuted = false; // Audio playback state
 
-        // Automatically scan tiktok1.mp4 ... tiktok50.mp4
         async function scanTikTokVideos() {
             const maxVideos = 50;
             const validVideos = [];
@@ -649,12 +614,10 @@
             if (validVideos.length > 0) {
                 availableVideos = validVideos;
             } else {
-                // Fallback to tiktok1.mp4 default if scanning yields no metadata yet
                 availableVideos = ['tiktok1.mp4'];
             }
         }
 
-        // Run scanning immediately
         scanTikTokVideos();
 
         function createTikTokCard() {
@@ -662,10 +625,9 @@
             const author = memeAuthors[Math.floor(Math.random() * memeAuthors.length)];
             const audioTrack = memeAudio[Math.floor(Math.random() * memeAudio.length)];
             const desc = memeDescs[Math.floor(Math.random() * memeDescs.length)];
-            const isLoud = Math.random() < 0.15; // 15% Loud TikTok Event
-            const isDouble = Math.random() < 0.20; // 20% x2 Bonus TikTok
+            const isLoud = Math.random() < 0.15;
+            const isDouble = Math.random() < 0.20;
 
-            // Pick video from discovered array or template pattern
             const videoSrc = availableVideos.length > 0 
                 ? availableVideos[(loadedTikTokCount - 1) % availableVideos.length]
                 : `tiktok${((loadedTikTokCount - 1) % 50) + 1}.mp4`;
@@ -677,12 +639,11 @@
             card.setAttribute('data-double', isDouble ? 'true' : 'false');
 
             card.innerHTML = `
-                <!-- MP4 Video Background -->
-                <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
-                    <video class="w-full h-full object-cover" autoplay loop muted playsinline onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <!-- MP4 Video Background with pointer-events-none for fluid native swipe -->
+                <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden pointer-events-none">
+                    <video class="tiktok-video-el w-full h-full object-cover" autoplay loop ${isVideoSoundUnmuted ? '' : 'muted'} playsinline onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <source src="${videoSrc}" type="video/mp4">
                     </video>
-                    <!-- Fallback UI if MP4 file missing -->
                     <div class="hidden absolute inset-0 bg-slate-900 flex-col items-center justify-center p-4 text-center">
                         <i class="fa-solid fa-video-slash text-4xl text-yellow-500 mb-2"></i>
                         <span class="text-xs font-bold text-slate-300">Файл ${videoSrc} не найден</span>
@@ -690,7 +651,7 @@
                 </div>
 
                 <!-- Overlay Header -->
-                <div class="relative z-10 flex items-center justify-between p-3">
+                <div class="relative z-10 flex items-center justify-between p-3 pointer-events-none">
                     <span class="bg-black/60 backdrop-blur px-2 py-0.5 rounded-full text-[9px] font-bold">РЕКОМЕНДАЦИИ #${loadedTikTokCount}</span>
                     ${isDouble ? '<span class="bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[9px] font-black animate-pulse">🔥 x2 BYN!</span>' : ''}
                     ${isLoud ? '<span class="bg-red-600 text-white px-2 py-0.5 rounded-full text-[9px] font-black animate-bounce">🔊 ГРОМКИЙ ЗВУК!</span>' : ''}
@@ -718,8 +679,8 @@
                     </div>
                 </div>
 
-                <!-- Bottom TikTok Description & Audio Bar -->
-                <div class="relative z-10 p-3 max-w-[80%]">
+                <!-- Bottom TikTok Description -->
+                <div class="relative z-10 p-3 max-w-[80%] pointer-events-none">
                     <div class="font-extrabold text-xs mb-0.5 text-yellow-300 drop-shadow">${author}</div>
                     <p class="text-[11px] text-slate-100 leading-snug line-clamp-3 mb-2 drop-shadow">${desc}</p>
                     <div class="flex items-center gap-1.5 text-[9px] text-slate-300 font-semibold">
@@ -729,14 +690,12 @@
                 </div>
             `;
 
-            // Like Action Effect
             const likeBtn = card.querySelector('.like-btn');
             likeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 likeBtn.classList.add('text-red-500');
                 audioFX.playSwipe();
                 
-                // Spawn Heart
                 const heart = document.createElement('div');
                 heart.className = 'floating-heart fa-solid fa-heart';
                 heart.style.left = `${e.clientX - 20}px`;
@@ -754,14 +713,14 @@
             }
         }
 
-        /* GAME STATE & DIFFICULTY ENGINE */
+        /* GAME STATE */
         let gameState = {
             isRunning: false,
             isPhoneVisible: true,
             scoreSeconds: 0,
             moneyEarned: 0,
             level: 1,
-            productivity: 100, // Slack meter
+            productivity: 100,
             bossApproaching: false,
             bossArrived: false,
             isFakeAlarm: false,
@@ -773,7 +732,6 @@
             randomEventsInterval: null
         };
 
-        // DOM elements
         const phoneWrapper = document.getElementById('phone-wrapper');
         const unhideZone = document.getElementById('unhide-zone');
         const handsOnWheel = document.getElementById('hands-on-wheel');
@@ -800,12 +758,34 @@
         const radioIcon = document.getElementById('radio-icon');
         const radioText = document.getElementById('radio-text');
         const mobileRadioContainer = document.getElementById('mobile-radio-container');
+        const videoMuteToggle = document.getElementById('video-mute-toggle');
+        const videoMuteIcon = document.getElementById('video-mute-icon');
 
         function triggerVibration(pattern) {
             if ("vibrate" in navigator) {
                 try { navigator.vibrate(pattern); } catch(e){}
             }
         }
+
+        // Toggle Video Audio Mute
+        function toggleVideoAudio() {
+            isVideoSoundUnmuted = !isVideoSoundUnmuted;
+            const videos = document.querySelectorAll('.tiktok-video-el');
+            videos.forEach(v => {
+                v.muted = !isVideoSoundUnmuted;
+                if (isVideoSoundUnmuted) {
+                    v.play().catch(()=>{});
+                }
+            });
+
+            if (isVideoSoundUnmuted) {
+                videoMuteIcon.className = "fa-solid fa-volume-high text-[10px] text-green-400";
+            } else {
+                videoMuteIcon.className = "fa-solid fa-volume-xmark text-[10px] text-red-400";
+            }
+        }
+
+        videoMuteToggle.addEventListener('click', toggleVideoAudio);
 
         function startGame() {
             audioFX.init();
@@ -843,16 +823,13 @@
             if (!gameState.isRunning) return;
             gameState.scoreSeconds++;
 
-            // Format Timer
             const mins = Math.floor(gameState.scoreSeconds / 60).toString().padStart(2, '0');
             const secs = (gameState.scoreSeconds % 60).toString().padStart(2, '0');
             scoreDisplay.innerText = `${mins}:${secs}`;
 
-            // Increase Difficulty Level every 20 seconds
             gameState.level = Math.floor(gameState.scoreSeconds / 20) + 1;
             levelDisplay.innerText = `Ур. ${gameState.level}`;
 
-            // Productivity Mechanics (Slack Penalty when phone is hidden)
             if (!gameState.isPhoneVisible) {
                 gameState.productivity = Math.max(0, gameState.productivity - 4);
                 if (gameState.productivity < 30) {
@@ -865,7 +842,6 @@
             } else {
                 gameState.productivity = Math.min(100, gameState.productivity + 2);
                 
-                // Income logic based on active TikTok card
                 const visibleCard = getCurrentlyVisibleTikTokCard();
                 let multiplier = 1;
                 if (visibleCard && visibleCard.getAttribute('data-double') === 'true') {
@@ -874,14 +850,12 @@
                 gameState.moneyEarned += (Math.floor(Math.random() * 3) + 2) * multiplier;
                 moneyDisplay.innerText = `${gameState.moneyEarned} BYN`;
 
-                // Loud TikTok trigger panic
                 if (visibleCard && visibleCard.getAttribute('data-loud') === 'true' && Math.random() < 0.2) {
                     audioFX.playLoudTikTok();
                     showWorkerPhrase("Тише! Динамик зарипел на всю кабину!", true);
                 }
             }
 
-            // Update Productivity Bar UI
             productivityBar.style.width = `${gameState.productivity}%`;
             productivityLabel.innerText = `План Выработки: ${gameState.productivity}%`;
         }
@@ -925,7 +899,6 @@
             triggerVibration(30);
         }
 
-        /* INSPECTOR & FAKE ALARMS LOGIC */
         function scheduleNextBossVisit() {
             if (!gameState.isRunning) return;
             const baseDelay = Math.max(2500, 7000 - gameState.level * 600);
@@ -1024,7 +997,6 @@
             scheduleNextBossVisit();
         }
 
-        /* RANDOM EVENTS: BUMPS & RADIO CALLS */
         function handleRandomEvents() {
             if (!gameState.isRunning || gameState.bossApproaching) return;
 
@@ -1077,7 +1049,6 @@
             mobileRadioContainer.classList.add('opacity-0', 'pointer-events-none');
         }
 
-        /* MIKHALYCH COMIC PHRASES */
         function showWorkerPhrase(text, urgent = false) {
             workerText.innerText = text;
             if (urgent) {
@@ -1112,7 +1083,6 @@
             gameoverScreen.classList.remove('hidden');
         }
 
-        /* TOUCH & EVENT BINDINGS */
         function bindTouch(element, callback) {
             let touched = false;
             element.addEventListener('touchstart', (e) => {
@@ -1137,7 +1107,6 @@
         bindTouch(radioBtn, answerRadio);
         bindTouch(document.getElementById('mobile-radio-btn'), answerRadio);
 
-        // Keyboard Controls
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -1147,7 +1116,6 @@
             }
         });
 
-        // Sound Toggle
         const soundBtn = document.getElementById('sound-btn');
         bindTouch(soundBtn, () => {
             audioFX.muted = !audioFX.muted;
@@ -1156,7 +1124,6 @@
                 '<i class="fa-solid fa-volume-high text-base"></i>';
         });
 
-        // Endless Feed Scroll Listener
         tiktokFeed.addEventListener('scroll', () => {
             audioFX.playSwipe();
             if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 400) {
@@ -1164,7 +1131,6 @@
             }
         }, { passive: true });
 
-        // Prevent Double Tap Zoom
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (event) => {
             const now = (new Date()).getTime();

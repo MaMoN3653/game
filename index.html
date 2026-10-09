@@ -326,7 +326,6 @@
                     <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent">
                         <span>14:32</span>
                         <div class="flex items-center gap-2">
-                            <!-- TikTok Audio Mute Toggle Button -->
                             <button id="video-mute-toggle" class="text-white hover:text-yellow-400 transition-colors">
                                 <i id="video-mute-icon" class="fa-solid fa-volume-xmark text-[10px] text-red-400"></i>
                             </button>
@@ -335,7 +334,7 @@
                         </div>
                     </div>
 
-                    <!-- ENDLESS TIKTOK FEED WITH SMOOTH SWIPES -->
+                    <!-- ENDLESS TIKTOK FEED WITH SMOOTH SNAP SWIPES -->
                     <div id="tiktok-feed" class="absolute inset-0 pt-5 pb-8 flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y" style="-webkit-overflow-scrolling: touch;">
                         <!-- TikTok Cards inserted dynamically -->
                     </div>
@@ -570,7 +569,7 @@
 
         const audioFX = new SoundEffects();
 
-        /* TIKTOK MP4 SCANNER & AUDIO CONTROLLER */
+        /* TIKTOK MP4 SCANNER & FEED ENGINE */
         const memeAuthors = ['@belaz_king', '@mikhali4_vip', '@rabotyaga777', '@zavod_live', '@minsk_dump', '@heavy_machinery', '@sobol_drives'];
         const memeAudio = ['оригинальный звук - Михалыч', 'трек - БелАЗ на Базе', 'звук - Карьерный Дрифт', 'ремикс - Соляра и Термос'];
         const memeDescs = [
@@ -586,7 +585,7 @@
 
         let availableVideos = [];
         let loadedTikTokCount = 0;
-        let isVideoSoundUnmuted = false; // Audio playback state
+        let isVideoSoundUnmuted = false;
 
         async function scanTikTokVideos() {
             const maxVideos = 50;
@@ -628,9 +627,13 @@
             const isLoud = Math.random() < 0.15;
             const isDouble = Math.random() < 0.20;
 
-            const videoSrc = availableVideos.length > 0 
-                ? availableVideos[(loadedTikTokCount - 1) % availableVideos.length]
-                : `tiktok${((loadedTikTokCount - 1) % 50) + 1}.mp4`;
+            // Pick available video or fallback
+            let videoSrc = 'tiktok1.mp4';
+            if (availableVideos.length > 0) {
+                videoSrc = availableVideos[(loadedTikTokCount - 1) % availableVideos.length];
+            } else {
+                videoSrc = `tiktok${((loadedTikTokCount - 1) % 50) + 1}.mp4`;
+            }
 
             const card = document.createElement('div');
             card.className = `tiktok-card relative w-full h-full min-h-[310px] sm:min-h-[380px] bg-black rounded-xl flex flex-col justify-between overflow-hidden mb-3 text-white snap-start shrink-0 ${isLoud ? 'border-4 border-red-500' : ''}`;
@@ -639,15 +642,11 @@
             card.setAttribute('data-double', isDouble ? 'true' : 'false');
 
             card.innerHTML = `
-                <!-- MP4 Video Background with pointer-events-none for fluid native swipe -->
+                <!-- MP4 Video Background -->
                 <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden pointer-events-none">
-                    <video class="tiktok-video-el w-full h-full object-cover" autoplay loop ${isVideoSoundUnmuted ? '' : 'muted'} playsinline onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <video class="tiktok-video-el w-full h-full object-cover" autoplay loop ${isVideoSoundUnmuted ? '' : 'muted'} playsinline>
                         <source src="${videoSrc}" type="video/mp4">
                     </video>
-                    <div class="hidden absolute inset-0 bg-slate-900 flex-col items-center justify-center p-4 text-center">
-                        <i class="fa-solid fa-video-slash text-4xl text-yellow-500 mb-2"></i>
-                        <span class="text-xs font-bold text-slate-300">Файл ${videoSrc} не найден</span>
-                    </div>
                 </div>
 
                 <!-- Overlay Header -->
@@ -767,7 +766,6 @@
             }
         }
 
-        // Toggle Video Audio Mute
         function toggleVideoAudio() {
             isVideoSoundUnmuted = !isVideoSoundUnmuted;
             const videos = document.querySelectorAll('.tiktok-video-el');
@@ -808,7 +806,7 @@
 
             tiktokFeed.innerHTML = '';
             loadedTikTokCount = 0;
-            appendMoreTikToks(6);
+            appendMoreTikToks(8);
 
             showPhone();
             resetRadioState();
@@ -1124,9 +1122,10 @@
                 '<i class="fa-solid fa-volume-high text-base"></i>';
         });
 
+        // Endless Feed Scroll Listener with Auto-Append
         tiktokFeed.addEventListener('scroll', () => {
             audioFX.playSwipe();
-            if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 400) {
+            if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 300) {
                 appendMoreTikToks(4);
             }
         }, { passive: true });

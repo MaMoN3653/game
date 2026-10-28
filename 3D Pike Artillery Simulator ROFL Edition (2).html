@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D SPG Artillery Simulator - ROFL Edition</title>
+    <!-- Tailwind CSS for UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: 'Share Tech Mono', monospace;
+            background-color: #020806;
+            color: #33ffaa;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            touch-action: none;
+        }
+
+        .hud-panel {
+            background: rgba(10, 25, 20, 0.82);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(51, 255, 170, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 120, 0.25), inset 0 0 10px rgba(51, 255, 170, 0.1);
+        }
+
+        .hud-text {
+            color: #33ffaa;
+            text-shadow: 0 0 6px rgba(51, 255, 170, 0.8);
+        }
+
+        .hud-amber {
+            color: #ffcc00;
+            text-shadow: 0 0 6px rgba(255, 204, 0, 0.8);
+        }
+
+        .hud-pink {
+            color: #ff66cc;
+            text-shadow: 0 0 6px rgba(255, 102, 204, 0.8);
+        }
+
+        .hud-cyan {
+            color: #00ffff;
+            text-shadow: 0 0 6px rgba(0, 255, 255, 0.8);
+        }
+
+        #scope-overlay {
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .touch-btn {
+            background: rgba(16, 40, 30, 0.85);
+            border: 2px solid rgba(51, 255, 170, 0.6);
+            color: #33ffaa;
+            box-shadow: 0 0 12px rgba(0, 255, 170, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .touch-btn:active, .touch-btn.active {
+            background: rgba(51, 255, 170, 0.5);
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(51, 255, 170, 0.9);
+            transform: scale(0.93);
+        }
+
+        @keyframes floatUpMeme {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.6) rotate(-8deg); }
+            30% { transform: translate(-50%, -30px) scale(1.3) rotate(4deg); }
+            70% { transform: translate(-50%, -50px) scale(1.1) rotate(-3deg); }
+            100% { opacity: 0; transform: translate(-50%, -85px) scale(0.7) rotate(0deg); }
+        }
+
+        .hit-notification {
+            animation: floatUpMeme 2.6s forwards ease-out;
+        }
+
+        .shake {
+            animation: shakeAnim 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shakeAnim {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="select-none">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- MAIN HUD LAYER -->
+    <div id="hud" class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-2 md:p-4">
+        
+        <!-- HEADER / TELEMETRY BAR -->
+        <div class="flex justify-between items-start w-full gap-2">
+            <!-- Left Header: Vehicle Status -->
+            <div class="hud-panel p-2 md:p-3 rounded-xl pointer-events-auto flex flex-col gap-0.5 text-xs">
+                <div class="flex items-center gap-1.5 border-b border-green-400/40 pb-1">
+                    <i class="fa-solid fa-fish-fins hud-text text-sm"></i>
+                    <span id="lbl-app-title" class="font-bold tracking-wider text-xs md:text-sm hud-text">САУ "МЕМ-3000"</span>
+                </div>
+                <div class="flex justify-between gap-3 mt-0.5">
+                    <span id="lbl-ammo-title" class="opacity-80">БОЕПРИПАС:</span>
+                    <span id="ammo-name-text" class="hud-amber font-bold">1. ЩУКА 🐟</span>
+                </div>
+                <div class="flex justify-between gap-3">
+                    <span id="lbl-view-title" class="opacity-80">ВИД:</span>
+                    <span id="cam-mode-text" class="hud-pink font-bold">ПРИЦЕЛ</span>
+                </div>
+            </div>
+
+            <!-- Center Telemetry Display -->
+            <div class="hud-panel px-3 py-1.5 md:px-6 md:py-2 rounded-xl flex gap-3 md:gap-6 text-center">
+                <div>
+                    <div id="lbl-azimuth" class="text-[9px] md:text-[10px] opacity-80">АЗИМУТ</div>
+                    <div id="azimuth-val" class="text-base md:text-2xl font-black hud-text">000.0°</div>
+                </div>
+                <div class="border-r border-green-400/30"></div>
+                <div>
+                    <div id="lbl-elevation" class="text-[9px] md:text-[10px] opacity-80">УГОЛ СТВОЛА</div>
+                    <div id="elevation-val" class="text-base md:text-2xl font-black hud-text">+45.0°</div>
+                </div>
+                <div class="border-r border-green-400/30"></div>
+                <div>
+                    <div id="lbl-range" class="text-[9px] md:text-[10px] opacity-80">ДАЛЬНОСТЬ</div>
+                    <div id="est-range-val" class="text-base md:text-2xl font-black hud-amber">2800 м</div>
+                </div>
+            </div>
+
+            <!-- Right Telemetry: Meme Trophies Score -->
+            <div class="hud-panel p-2 rounded-xl text-right text-xs pointer-events-auto hidden sm:block">
+                <div id="lbl-trophies" class="text-[10px] opacity-80">МЕМ-ТРОФЕИ</div>
+                <div id="score-val" class="text-xl font-black hud-pink">0 ⭐</div>
+            </div>
+        </div>
+
+        <!-- CENTER MEME NOTIFICATION CONTAINER -->
+        <div id="hit-notification-container" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 pointer-events-none z-40 w-full text-center"></div>
+
+        <!-- CLEAN TACTICAL RETICLE (NO DARK VIGNETTE STRIPES) -->
+        <div id="scope-overlay" class="absolute inset-0 flex items-center justify-center opacity-100">
+            <div class="w-[70vw] h-[70vw] max-w-[420px] max-h-[420px] rounded-full border border-green-400/40 relative flex items-center justify-center">
+                <!-- Tactical Crosshair -->
+                <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-green-400/60 transform -translate-x-1/2"></div>
+                <div class="absolute left-0 right-0 top-1/2 h-[1px] bg-green-400/60 transform -translate-y-1/2"></div>
+                <div class="w-[30%] h-[30%] rounded-full border border-dashed border-green-400/50"></div>
+                
+                <div class="absolute w-full flex justify-between px-6 text-[9px] md:text-[10px] hud-text">
+                    <span>-60°</span><span>-30°</span><span>0°</span><span>30°</span><span>60°</span>
+                </div>
+                <div class="absolute h-full flex flex-col justify-between py-6 text-[9px] md:text-[10px] hud-text items-center">
+                    <span>+75°</span><span>+50°</span><span>+25°</span><span>0°</span>
+                </div>
+            </div>
+            <div id="aim-hint" class="absolute bottom-28 text-[11px] hud-text opacity-80 bg-black/70 px-3 py-1 rounded-lg border border-green-400/40">
+                <i class="fa-solid fa-hand-pointer mr-1"></i> <span id="lbl-hint-text">СВАЙП ДЛЯ НАВЕДЕНИЯ / КНОПКИ ДЛЯ СТРЕЛЬБЫ</span>
+            </div>
+        </div>
+
+        <!-- COMPACT IN-FLIGHT TELEMETRY HUD (Top Right, Non-Intrusive) -->
+        <div id="flight-steer-hint" class="absolute top-16 right-4 hud-panel px-3 py-2 rounded-xl text-right hidden pointer-events-auto border border-yellow-400/60 shadow-lg bg-black/70 backdrop-blur-sm max-w-[210px]">
+            <div class="hud-cyan font-bold text-xs flex items-center justify-end gap-1">
+                <span id="lbl-flight-hud-title">🚀 ПОЛЁТ СНАРЯДА</span>
+            </div>
+            <div class="text-[10px] opacity-90 mt-0.5">
+                <span id="lbl-flight-alt">ВЫСОТА</span>: <span id="flight-alt-val" class="hud-amber font-bold">0</span>м<br>
+                <span id="lbl-flight-dist">ДИСТ</span>: <span id="flight-dist-val" class="hud-amber font-bold">0</span>м
+            </div>
+            <button onclick="doBarrelRoll()" class="mt-1 bg-pink-600/80 hover:bg-pink-500 active:scale-95 text-white font-black text-[10px] px-2.5 py-1 rounded-md border border-pink-300">
+                🌀 <span id="lbl-btn-roll">БОЧКА!</span>
+            </button>
+        </div>
+
+        <!-- MOBILE CONTROLS & ACTION BUTTONS -->
+        <div class="flex justify-between items-end w-full pointer-events-auto gap-2">
+            
+            <!-- MOBILE VIRTUAL D-PAD (Left Side) -->
+            <div class="flex flex-col items-center gap-1.5 z-30 mb-1">
+                <button id="btn-up" class="touch-btn w-11 h-11 md:w-13 md:h-13 rounded-2xl text-lg">
+                    <i class="fa-solid fa-chevron-up"></i>
+                </button>
+                <div class="flex gap-1.5">
+                    <button id="btn-left" class="touch-btn w-11 h-11 md:w-13 md:h-13 rounded-2xl text-lg">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button onclick="resetAim()" class="touch-btn w-9 h-11 md:w-11 md:h-13 rounded-2xl text-xs font-bold" title="Reset">
+                        <i class="fa-solid fa-crosshairs"></i>
+                    </button>
+                    <button id="btn-right" class="touch-btn w-11 h-11 md:w-13 md:h-13 rounded-2xl text-lg">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+                <button id="btn-down" class="touch-btn w-11 h-11 md:w-13 md:h-13 rounded-2xl text-lg">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+            </div>
+
+            <!-- CENTER FIRE & CONTROLS -->
+            <div class="flex flex-col items-center gap-1 z-30 pb-1">
+                <!-- Reload Progress Bar -->
+                <div class="w-36 md:w-52 h-2 bg-gray-900/80 rounded-full border border-green-400/50 overflow-hidden">
+                    <div id="reload-bar" class="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-pink-500 w-full transition-all duration-100"></div>
+                </div>
+                
+                <!-- Main Fire Button -->
+                <button id="fire-btn" onclick="fireCannon()" class="hud-panel relative px-5 py-2.5 md:px-8 md:py-3 rounded-2xl text-base md:text-lg font-black tracking-widest text-amber-300 border-2 border-yellow-400/80 hover:border-yellow-300 active:scale-95 transition-all shadow-[0_0_22px_rgba(255,200,0,0.5)]">
+                    🚀 <span id="lbl-fire-text">ОГОНЬ МЕМОМ!</span> 🐟
+                </button>
+
+                <!-- Action Toolbar Row 1: Ammo & Charge -->
+                <div class="flex gap-1 text-[11px] flex-wrap justify-center">
+                    <button onclick="cycleAmmo()" id="btn-ammo-toggle" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-amber font-bold">
+                        💣 <span id="lbl-ammo-btn">СНАРЯД: ЩУКА 🐟</span>
+                    </button>
+                    <button onclick="toggleCharge()" id="btn-charge-toggle" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-text font-bold">
+                        ⚡ <span id="lbl-charge-btn">ЗАРЯД: СРЕДНИЙ</span>
+                    </button>
+                </div>
+
+                <!-- Action Toolbar Row 2: Camera, Zoom, BGM -->
+                <div class="flex gap-1 text-[11px] flex-wrap justify-center">
+                    <button onclick="toggleSensitivity()" id="btn-sens-toggle" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-text font-bold">
+                        🎛️ <span id="lbl-sens-btn">ЧУВСТВ: СРЕД</span>
+                    </button>
+                    <button onclick="toggleCameraMode()" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-pink font-bold">
+                        📹 <span id="lbl-cam-btn">ПОЛЁТ</span>
+                    </button>
+                    <button onclick="toggleZoom()" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-text">
+                        🔍 <span id="zoom-val">2.5x</span>
+                    </button>
+                    <button onclick="toggleBGM()" id="bgm-btn" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-cyan font-bold">
+                        🎵 <span id="lbl-bgm-btn">МУЗЫКА: ВКЛ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TACTICAL MINIMAP -->
+            <div class="hud-panel p-1 rounded-2xl flex flex-col items-center relative z-30">
+                <div class="text-[9px] font-bold hud-text mb-0.5 uppercase tracking-wider flex justify-between w-full px-1">
+                    <span id="lbl-minimap">МЕМ-КАРТА</span>
+                    <span class="hud-amber">5000м</span>
+                </div>
+                <canvas id="minimap" width="105" height="105" class="rounded-xl border border-green-400/50 bg-black/80 cursor-pointer" onclick="onMinimapClick(event)"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- MAIN GAME LOGIC SCRIPT (SAFE UNICODE STRINGS FOR MOBILE EDITORS LIKE JOTA+) -->
+    <script>
+        // Unicode Escaped Text Dictionary
+        const UText = {
+            appTitle: "\u0421\u0410\u0423 \"\u041c\u0415\u041c-3000\"",
+            ammoTitle: "\u0411\u041e\u0415\u041f\u0420\u0418\u041f\u0410\u0421:",
+            viewTitle: "\u0412\u0418\u0414:",
+            azimuth: "\u0410\u0417\u0418\u041c\u0423\u0422",
+            elevation: "\u0423\u0413\u041e\u041b \u0421\u0422\u0412\u041e\u041b\u0410",
+            range: "\u0414\u0410\u041b\u042c\u041d\u041e\u0421\u0422\u042c",
+            trophies: "\u041c\u0415\u041c-\u0422\u0420\u041e\u0424\u0415\u0418",
+            hintText: "\u0421\u0412\u0410\u0419\u041f \u0414\u041b\u042f \u041d\u0410\u0412\u0415\u0414\u0415\u041d\u0418\u042f / \u041a\u041d\u041e\u041f\u041a\u0418 \u0414\u041b\u042f \u0421\u0422\u0420\u0415\u041b\u042c\u0411\u042b",
+            flightHudTitle: "\u0026#128640; \u041f\u041e\u041b\u0401\u0422 \u0421\u041d\u0410\u0420\u042f\u0414\u0410",
+            flightAlt: "\u0412\u042b\u0421\u041e\u0422\u0410",
+            flightDist: "\u0414\u0418\u0421\u0422",
+            btnRoll: "\u0411\u041e\u0427\u041a\u0410!",
+            fireText: "\u041e\u0413\u041e\u041d\u042c \u041c\u0415\u041c\u041e\u041c!",
+            reloading: "\u0417\u0410\u0420\u042f\u0414\u041a\u0410...",
+            chargeSmall: "\u041c\u0410\u041b\u042b\u0419",
+            chargeMed: "\u0421\u0420\u0415\u0414\u041d\u0418\u0419",
+            chargeMax: "\u041c\u0410\u041a\u0421\u0418\u041c\u0423\u041c",
+            chargeLabel: "\u0417\u0410\u0420\u042f\u0414",
+            sensLow: "\u041d\u0418\u0417\u041a",
+            sensMed: "\u0421\u0420\u0415\u0414",
+            sensHigh: "\u0412\u042b\u0421",
+            sensLabel: "\u0427\u0423\u0412\u0421\u0422\u0412",
+            viewScope: "\u041f\u0420\u0418\u0426\u0415\u041b",
+            viewFlight: "\u041f\u041e\u041b\u0401\u0422",
+            view360: "\u041e\u0411\u0417\u041e\u0420 360\u0026deg;",
+            bgmOn: "\u041c\u0423\u0417\u042b\u041a\u0410: \u0412\u041a\u041b",
+            bgmOff: "\u041c\u0423\u0417\u042b\u041a\u0410: \u0412\u042b\u041a\u041b",
+            minimap: "\u041c\u0415\u041c-\u041a\u0410\u0420\u0422\u0410",
+            ammoPike: "1. \u0429\u0423\u041a\u0410 \u0026#128031;",
+            ammoCatfish: "2. \u0421\u041e\u041c-\u0422\u042f\u0416 \u0026#128049;",
+            ammoSardines: "3. \u0428\u041f\u0420\u041e\u0422\u042b \u0026#129387;",
+            ammoBread: "4. \u0411\u0410\u0422\u041e\u041d \u0026#127838;",
+            ammoBtnPrefix: "\u0421\u041d\u0410\u0420\u042f\u0414:",
+            msgRoll: "\u0026#127744; \u0411\u041e\u0427\u041a\u0410 \u0412 \u041f\u041e\u041b\u0401\u0422\u0415!",
+            msgSardineSplit: "\u0026#129387; \u0428\u041f\u0420\u041e\u0422\u042b \u041e\u0422\u041a\u0420\u042b\u041b\u0418\u0421\u042c!",
+            msgCatFly: "\u0026#128570; \u041a\u0410\u0422\u0410\u041f\u0423\u041b\u042c\u0422\u0418\u0420\u041e\u0412\u0410\u041d\u0418\u0415 \u041a\u041e\u0422\u0410!",
+            msgGrandmaFly: "\u0026#128477; \u0411\u0410\u0411\u0423\u0428\u041a\u0410 \u0423\u041b\u0415\u0422\u0415\u041b\u0410 (\u041c\u042d\u0420\u0418 \u041f\u041e\u041f\u041f\u0418\u041d\u0421)",
+            msgGooseHonk: "\u0026#129435; HONK! \u0413\u0423\u0421\u042c \u041e\u0411\u0415\u0417\u0412\u0420\u0415\u0416\u0415\u041d",
+            msgZhiguliDrift: "\u0026#128663; \u0414\u0420\u0418\u0424\u0422 \u041d\u0410 \u0416\u0418\u0413\u0423\u041b\u042f\u0425!",
+            msgHedgehogHit: "\u0026#129428; \u0412 \u0421\u0410\u041c\u042b\u0419 \u041f\u042f\u0422\u0410\u0427\u041e\u041a!",
+            msgCatfishSplash: "\u0026#127754; \u0421\u0423\u041f\u0425\u0420-\u041f\u041b\u042e\u0425 \u0421\u041e\u041c\u041e\u041c!",
+            msgBreadPigeons: "\u0026#127838; \u0413\u041e\u041b\u0423\u0411\u0418 \u0421\u041b\u0415\u0422\u0415\u041b\u0418\u0421\u042c \u041d\u0410 \u0425\u041b\u0415\u0411!",
+            msgSplashGround: "\u0026#128166; \u0411\u0423\u041b\u042c\u041a \u0412 \u0413\u0420\u042f\u0417\u042c!",
+            tgtHedgehog: "\u0415\u0436\u0438\u043a \u0410\u043b\u044c\u0444\u0430 (850\u043c)",
+            tgtCatBox: "\u041a\u043e\u0442 \u0432 \u043a\u043e\u0440\u043e\u0431\u043a\u0435 (1600\u043c)",
+            tgtGrandma: "\u0411\u0430\u0431\u0443\u0448\u043a\u0430 \u0441 \u043a\u043b\u044e\u043a\u043e\u0439 (2300\u043c)",
+            tgtGoose: "\u0413\u0443\u0441\u044c HONK (3100\u043c)",
+            tgtZhiguli: "\u0416\u0438\u0433\u0443\u043b\u0438 \u0428\u0435\u0441\u0442\u0451\u0440\u043a\u0430 (4200\u043c)"
+        };
+
+        // Populate Static HTML Labels safely
+        document.getElementById('lbl-app-title').innerHTML = UText.appTitle;
+        document.getElementById('lbl-ammo-title').innerText = UText.ammoTitle;
+        document.getElementById('lbl-view-title').innerText = UText.viewTitle;
+        document.getElementById('lbl-azimuth').innerText = UText.azimuth;
+        document.getElementById('lbl-elevation').innerText = UText.elevation;
+        document.getElementById('lbl-range').innerText = UText.range;
+        document.getElementById('lbl-trophies').innerText = UText.trophies;
+        document.getElementById('lbl-hint-text').innerText = UText.hintText;
+        document.getElementById('lbl-flight-hud-title').innerHTML = UText.flightHudTitle;
+        document.getElementById('lbl-flight-alt').innerText = UText.flightAlt;
+        document.getElementById('lbl-flight-dist').innerText = UText.flightDist;
+        document.getElementById('lbl-btn-roll').innerText = UText.btnRoll;
+        document.getElementById('lbl-fire-text').innerText = UText.fireText;
+        document.getElementById('lbl-minimap').innerText = UText.minimap;
+
+        const GRAVITY = 9.81;
+        const MAP_SIZE = 10000;
+        
+        let scene, camera, renderer, clock;
+        let spgGroup, turretGroup, barrelGroup, muzzlePoint;
+        let terrainMesh;
+        let targets = [];
+        let activeProjectiles = [];
+        let explosions = [];
+
+        // Aim Physics
+        let targetYaw = 0;        
+        let targetPitch = 45;     
+        let currentYaw = 0;       
+        let currentPitch = 45;    
+        let yawVelocity = 0;
+        let pitchVelocity = 0;
+
+        // Sensitivity
+        const sensitivityLevels = [0.03, 0.07, 0.14];
+        const sensitivityNames = [UText.sensLow, UText.sensMed, UText.sensHigh];
+        let sensitivityIdx = 1;
+
+        // Ammo Types
+        let currentAmmoIdx = 0;
+        const ammoTypes = [
+            { id: 'pike', name: UText.ammoPike, speedMult: 1.0, icon: '🐟' },
+            { id: 'catfish', name: UText.ammoCatfish, speedMult: 0.82, icon: '🐋' },
+            { id: 'sardines', name: UText.ammoSardines, speedMult: 1.05, icon: '🥫' },
+            { id: 'baguette', name: UText.ammoBread, speedMult: 0.95, icon: '🍞' }
+        ];
+
+        // Charges
+        let chargeLevel = 2;
+        const chargeNames = { 1: UText.chargeSmall, 2: UText.chargeMed, 3: UText.chargeMax };
+        const muzzleVelocities = { 1: 180, 2: 280, 3: 380 };
+        
+        let isReloading = false;
+        let reloadTime = 2.5;     
+        let reloadTimer = 0;
+
+        let zoomLevels = [1, 2.5, 5];
+        let currentZoomIdx = 1;
+
+        // Camera
+        let cameraMode = 'SCOPE';
+        let activeFollowShell = null;
+        let orbitCamAngle = 0;
+
+        // Score
+        let memeTrophies = 0;
+
+        // Web Audio Context & Synthesizer
+        let audioCtx = null;
+        let isBgmPlaying = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // --- SYNTHESIZED ROFL AUDIO ENGINE ---
+        function playLaunchSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            // Beer Can "ПШИК!" Pop
+            const popBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+            const popData = popBuffer.getChannelData(0);
+            for (let i = 0; i < popData.length; i++) {
+                popData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.03));
+            }
+            const popSource = audioCtx.createBufferSource();
+            popSource.buffer = popBuffer;
+            popSource.connect(audioCtx.destination);
+            popSource.start(now);
+
+            // "Boing!" Launch pitch bend
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, now + 0.05);
+            osc.frequency.exponentialRampToValueAtTime(750, now + 0.4);
+
+            gain.gain.setValueAtTime(0.8, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + 0.05);
+            osc.stop(now + 0.45);
+        }
+
+        function playSplashSound(isCatfish = false) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(isCatfish ? 150 : 320, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + (isCatfish ? 1.0 : 0.6));
+
+            gain.gain.setValueAtTime(1.0, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + (isCatfish ? 1.0 : 0.65));
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + (isCatfish ? 1.0 : 0.65));
+        }
+
+        function playMeowSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.linearRampToValueAtTime(850, now + 0.2);
+            osc.frequency.linearRampToValueAtTime(400, now + 0.5);
+
+            gain.gain.setValueAtTime(0.6, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.55);
+        }
+
+        function playHonkSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+
+            osc.frequency.setValueAtTime(380, now);
+            osc.frequency.setValueAtTime(450, now + 0.08);
+
+            gain.gain.setValueAtTime(0.8, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.35);
+        }
+
+        function startBGM() {
+            if (!audioCtx || isBgmPlaying) return;
+            isBgmPlaying = true;
+
+            const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+            let step = 0;
+
+            function playNote() {
+                if (!isBgmPlaying) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'square';
+                const freq = notes[step % notes.length] * (step % 2 === 0 ? 1 : 0.5);
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.2);
+
+                step = (step + 1) % 16;
+                setTimeout(playNote, 220);
+            }
+            playNote();
+        }
+
+        function toggleBGM() {
+            initAudio();
+            isBgmPlaying = !isBgmPlaying;
+            if (isBgmPlaying) {
+                startBGM();
+                document.getElementById('lbl-bgm-btn').innerText = UText.bgmOn;
+            } else {
+                document.getElementById('lbl-bgm-btn').innerText = UText.bgmOff;
+            }
+        }
+
+        // --- THREE.JS ENGINE SETUP ---
+        function initEngine() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x7ec0ee);
+            scene.fog = new THREE.FogExp2(0x7ec0ee, 0.00015);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 20000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(1500, 2500, 1000);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.camera.near = 10;
+            dirLight.shadow.camera.far = 8000;
+            const d = 3000;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            generateTerrain();
+            buildFishSPGVehicle();
+            spawnMemeTargets();
+
+            window.addEventListener('resize', onWindowResize, false);
+            setupInputListeners();
+
+            animate();
+        }
+
+        function getTerrainHeight(x, z) {
+            const scale1 = 0.0006, scale2 = 0.0025;
+            let h = Math.sin(x * scale1) * Math.cos(z * scale1) * 140;
+            h += Math.sin(x * scale2 + 1.5) * Math.cos(z * scale2) * 35;
+
+            const distFromBase = Math.hypot(x, z);
+            if (distFromBase < 250) {
+                const factor = distFromBase / 250;
+                h *= Math.pow(factor, 2);
+            }
+            return h;
+        }
+
+        function generateTerrain() {
+            const segs = 180;
+            const geo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE, segs, segs);
+            geo.rotateX(-Math.PI / 2);
+
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const z = pos.getZ(i);
+                pos.setY(i, getTerrainHeight(x, z));
+            }
+            geo.computeVertexNormals();
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#4e6836';
+            ctx.fillRect(0, 0, 256, 256);
+            for (let i = 0; i < 2000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#3e542a' : '#618243';
+                ctx.fillRect(Math.random() * 256, Math.random() * 256, 3, 3);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(80, 80);
+
+            const mat = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.85
+            });
+
+            terrainMesh = new THREE.Mesh(geo, mat);
+            terrainMesh.receiveShadow = true;
+            scene.add(terrainMesh);
+        }
+
+        // --- FISH SPG VEHICLE ---
+        function buildFishSPGVehicle() {
+            spgGroup = new THREE.Group();
+
+            const fishCamouflageMat = new THREE.MeshStandardMaterial({ color: 0x2e5c38, roughness: 0.5 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x1f261f, roughness: 0.6 });
+            const woodBarrelMat = new THREE.MeshStandardMaterial({ color: 0x7c4d28, roughness: 0.7 });
+
+            // Hull
+            const hull = new THREE.Mesh(new THREE.BoxGeometry(6.5, 2.2, 11), fishCamouflageMat);
+            hull.position.y = 1.8;
+            hull.castShadow = true;
+            spgGroup.add(hull);
+
+            // Tracks
+            const leftTrack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 11.5), darkMat);
+            leftTrack.position.set(-3.6, 1.0, 0);
+            const rightTrack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 11.5), darkMat);
+            rightTrack.position.set(3.6, 1.0, 0);
+            spgGroup.add(leftTrack, rightTrack);
+
+            // Turret
+            turretGroup = new THREE.Group();
+            turretGroup.position.set(0, 3.0, -0.5);
+
+            const turretMesh = new THREE.Mesh(new THREE.BoxGeometry(5.8, 2.4, 7), fishCamouflageMat);
+            turretMesh.position.set(0, 1.2, 0);
+            turretMesh.castShadow = true;
+            turretGroup.add(turretMesh);
+
+            // Barrel
+            barrelGroup = new THREE.Group();
+            barrelGroup.position.set(0, 1.2, -3.2);
+
+            const mantlet = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 1.8), woodBarrelMat);
+            mantlet.position.set(0, 0, -0.5);
+            barrelGroup.add(mantlet);
+
+            const barrelLength = 11.0;
+            const mainBarrelGeo = new THREE.CylinderGeometry(0.5, 0.65, barrelLength, 16);
+            mainBarrelGeo.rotateX(-Math.PI / 2);
+            mainBarrelGeo.translate(0, 0, -barrelLength / 2 - 0.8);
+
+            const mainBarrel = new THREE.Mesh(mainBarrelGeo, woodBarrelMat);
+            mainBarrel.castShadow = true;
+            barrelGroup.add(mainBarrel);
+
+            muzzlePoint = new THREE.Object3D();
+            muzzlePoint.position.set(0, 0, -barrelLength - 2.2);
+            barrelGroup.add(muzzlePoint);
+
+            turretGroup.add(barrelGroup);
+            spgGroup.add(turretGroup);
+
+            const groundY = getTerrainHeight(0, 0);
+            spgGroup.position.set(0, groundY, 0);
+            scene.add(spgGroup);
+        }
+
+        // --- 3D MEME TARGETS CREATOR ---
+        function spawnMemeTargets() {
+            const memeConfigs = [
+                { type: 'hedgehog', name: UText.tgtHedgehog, tx: -90, tz: -850, hp: 100 },
+                { type: 'cat_box', name: UText.tgtCatBox, tx: 220, tz: -1600, hp: 120 },
+                { type: 'grandma', name: UText.tgtGrandma, tx: -340, tz: -2300, hp: 100 },
+                { type: 'goose', name: UText.tgtGoose, tx: 180, tz: -3100, hp: 80 },
+                { type: 'zhiguli', name: UText.tgtZhiguli, tx: -450, tz: -4200, hp: 180 }
+            ];
+
+            memeConfigs.forEach(cfg => {
+                const targetGroup = new THREE.Group();
+                const ty = getTerrainHeight(cfg.tx, cfg.tz);
+                let radius = 10.0;
+
+                if (cfg.type === 'hedgehog') {
+                    // Hedgehog
+                    const body = new THREE.Mesh(new THREE.SphereGeometry(6.5, 14, 14), new THREE.MeshStandardMaterial({ color: 0x4a3222 }));
+                    body.position.y = 5.0;
+                    targetGroup.add(body);
+
+                    const snout = new THREE.Mesh(new THREE.ConeGeometry(2.0, 3.8, 10), new THREE.MeshStandardMaterial({ color: 0xffccaa }));
+                    snout.rotateX(-Math.PI / 2);
+                    snout.position.set(0, 4.2, 6.0);
+                    targetGroup.add(snout);
+
+                } else if (cfg.type === 'cat_box') {
+                    // Cat in Box
+                    const box = new THREE.Mesh(new THREE.BoxGeometry(8, 7, 8), new THREE.MeshStandardMaterial({ color: 0xc29b62 }));
+                    box.position.y = 3.5;
+                    targetGroup.add(box);
+
+                    const catHead = new THREE.Mesh(new THREE.SphereGeometry(2.5, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff8822 }));
+                    catHead.position.set(0, 8.2, 0);
+                    targetGroup.add(catHead);
+
+                    // Ears
+                    const earL = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.8, 4), new THREE.MeshStandardMaterial({ color: 0xff8822 }));
+                    earL.position.set(-1.4, 10.2, 0);
+                    const earR = earL.clone();
+                    earR.position.set(1.4, 10.2, 0);
+                    targetGroup.add(earL, earR);
+
+                } else if (cfg.type === 'grandma') {
+                    // Grandma on Bench
+                    const bench = new THREE.Mesh(new THREE.BoxGeometry(9, 2.5, 4), new THREE.MeshStandardMaterial({ color: 0x663300 }));
+                    bench.position.y = 1.25;
+                    targetGroup.add(bench);
+
+                    const grandmaBody = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.2, 6, 8), new THREE.MeshStandardMaterial({ color: 0xcc4488 }));
+                    grandmaBody.position.set(0, 5.0, 0);
+                    targetGroup.add(grandmaBody);
+
+                    const umbrella = new THREE.Mesh(new THREE.ConeGeometry(3.5, 1.8, 8), new THREE.MeshStandardMaterial({ color: 0x3388ff }));
+                    umbrella.position.set(1.8, 9.5, 0);
+                    targetGroup.add(umbrella);
+
+                } else if (cfg.type === 'goose') {
+                    // Goose
+                    const gBody = new THREE.Mesh(new THREE.SphereGeometry(3.5, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                    gBody.position.y = 3.5;
+                    targetGroup.add(gBody);
+
+                    const gNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 5, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                    gNeck.position.set(0, 7.0, 1.8);
+                    targetGroup.add(gNeck);
+
+                    const gBeak = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.2, 6), new THREE.MeshStandardMaterial({ color: 0xff8800 }));
+                    gBeak.rotateX(-Math.PI / 2);
+                    gBeak.position.set(0, 9.0, 3.2);
+                    targetGroup.add(gBeak);
+
+                } else if (cfg.type === 'zhiguli') {
+                    // Zhiguli Car
+                    const carBody = new THREE.Mesh(new THREE.BoxGeometry(6.5, 3.0, 12), new THREE.MeshStandardMaterial({ color: 0xcc2222 }));
+                    carBody.position.y = 2.5;
+                    targetGroup.add(carBody);
+
+                    const cabin = new THREE.Mesh(new THREE.BoxGeometry(5.8, 2.2, 6), new THREE.MeshStandardMaterial({ color: 0x99ffff, transparent: true, opacity: 0.7 }));
+                    cabin.position.set(0, 4.8, -0.5);
+                    targetGroup.add(cabin);
+                }
+
+                targetGroup.position.set(cfg.tx, ty, cfg.tz);
+                scene.add(targetGroup);
+
+                targets.push({
+                    mesh: targetGroup,
+                    type: cfg.type,
+                    position: new THREE.Vector3(cfg.tx, ty, cfg.tz),
+                    radius: radius,
+                    name: cfg.name,
+                    destroyed: false
+                });
+            });
+        }
+
+        // --- AMMO 3D MESH GENERATOR ---
+        function createAmmoMesh(typeId) {
+            const group = new THREE.Group();
+
+            if (typeId === 'pike') {
+                // Pike Fish
+                const body = new THREE.Mesh(new THREE.ConeGeometry(0.75, 4.2, 12), new THREE.MeshStandardMaterial({ color: 0x4a7c38 }));
+                body.rotateX(-Math.PI / 2);
+                group.add(body);
+
+                const tail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.4, 1.2), new THREE.MeshStandardMaterial({ color: 0xcc5522 }));
+                tail.position.set(0, 0, 2.6);
+                group.add(tail);
+
+            } else if (typeId === 'catfish') {
+                // Giant Catfish
+                const body = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 12), new THREE.MeshStandardMaterial({ color: 0x223344 }));
+                body.scale.set(1.0, 0.9, 2.2);
+                group.add(body);
+
+                // Whiskers
+                const wL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.5), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                wL.rotateZ(Math.PI / 3);
+                wL.position.set(-1.8, -0.5, -2.5);
+                group.add(wL);
+
+            } else if (typeId === 'sardines') {
+                // Sardine Can
+                const can = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8 }));
+                can.rotateX(Math.PI / 2);
+                group.add(can);
+
+            } else if (typeId === 'baguette') {
+                // Bread Loaf
+                const loaf = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 3.8), new THREE.MeshStandardMaterial({ color: 0xcc8833 }));
+                group.add(loaf);
+            }
+
+            return group;
+        }
+
+        // --- CANNON LAUNCH LOGIC ---
+        function fireCannon() {
+            if (isReloading) return;
+            initAudio();
+
+            const ammoObj = ammoTypes[currentAmmoIdx];
+            const v0 = muzzleVelocities[chargeLevel] * ammoObj.speedMult;
+            
+            const muzzleWorldPos = new THREE.Vector3();
+            muzzlePoint.getWorldPosition(muzzleWorldPos);
+
+            const fireDirection = new THREE.Vector3(0, 0, -1);
+            fireDirection.applyQuaternion(barrelGroup.getWorldQuaternion(new THREE.Quaternion())).normalize();
+
+            const vel = fireDirection.clone().multiplyScalar(v0);
+
+            const ammoMesh = createAmmoMesh(ammoObj.id);
+            ammoMesh.position.copy(muzzleWorldPos);
+            ammoMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), fireDirection);
+            scene.add(ammoMesh);
+
+            const projectile = {
+                mesh: ammoMesh,
+                typeId: ammoObj.id,
+                pos: muzzleWorldPos.clone(),
+                vel: vel,
+                rollAngle: 0,
+                active: true
+            };
+
+            activeProjectiles.push(projectile);
+
+            playLaunchSound();
+
+            activeFollowShell = projectile;
+            if (cameraMode !== 'FOLLOW') {
+                cameraMode = 'FOLLOW';
+                document.getElementById('cam-mode-text').innerText = UText.viewFlight;
+                document.getElementById('scope-overlay').style.opacity = "0";
+            }
+
+            document.getElementById('flight-steer-hint').classList.remove('hidden');
+
+            startReloading();
+        }
+
+        function doBarrelRoll() {
+            if (activeFollowShell && activeFollowShell.active) {
+                activeFollowShell.rollAngle += Math.PI * 2;
+                showHitNotification(UText.msgRoll, "hud-cyan");
+            }
+        }
+
+        function startReloading() {
+            isReloading = true;
+            reloadTimer = reloadTime;
+            const fireBtn = document.getElementById('fire-btn');
+            fireBtn.disabled = true;
+            fireBtn.classList.add('opacity-50');
+            fireBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> ${UText.reloading}`;
+        }
+
+        function updateReloading(delta) {
+            if (!isReloading) return;
+            reloadTimer -= delta;
+            const pct = Math.max(0, (1 - reloadTimer / reloadTime) * 100);
+            document.getElementById('reload-bar').style.width = `${pct}%`;
+
+            if (reloadTimer <= 0) {
+                isReloading = false;
+                const fireBtn = document.getElementById('fire-btn');
+                fireBtn.disabled = false;
+                fireBtn.classList.remove('opacity-50');
+                fireBtn.innerHTML = `🚀 <span id="lbl-fire-text">${UText.fireText}</span> 🐟`;
+            }
+        }
+
+        // --- PROJECTILE & IN-FLIGHT STEERING LOOP ---
+        function updateProjectiles(delta) {
+            for (let i = activeProjectiles.length - 1; i >= 0; i--) {
+                const p = activeProjectiles[i];
+                if (!p.active) continue;
+
+                // Ballistics
+                p.vel.y -= GRAVITY * delta;
+                p.pos.addScaledVector(p.vel, delta);
+                p.mesh.position.copy(p.pos);
+
+                const lookTarget = p.pos.clone().add(p.vel);
+                p.mesh.lookAt(lookTarget);
+
+                if (p.rollAngle > 0) {
+                    p.mesh.rotateZ(0.2);
+                    p.rollAngle -= 0.2;
+                }
+
+                // Sardine Can Cluster Split
+                if (p.typeId === 'sardines' && !p.split && p.vel.y < -10) {
+                    p.split = true;
+                    showHitNotification(UText.msgSardineSplit, "hud-amber");
+                    for (let s = 0; s < 6; s++) {
+                        const miniVel = p.vel.clone().add(new THREE.Vector3((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 15, (Math.random() - 0.5) * 30));
+                        const miniMesh = createAmmoMesh('pike');
+                        miniMesh.position.copy(p.pos);
+                        scene.add(miniMesh);
+
+                        activeProjectiles.push({
+                            mesh: miniMesh,
+                            typeId: 'pike',
+                            pos: p.pos.clone(),
+                            vel: miniVel,
+                            active: true
+                        });
+                    }
+                }
+
+                // Check Ground / Target Collisions
+                const terrainY = getTerrainHeight(p.pos.x, p.pos.z);
+                let hitTarget = null;
+
+                for (let t of targets) {
+                    if (t.destroyed) continue;
+                    if (p.pos.distanceTo(t.position) < t.radius + 2.5) {
+                        hitTarget = t;
+                        break;
+                    }
+                }
+
+                if (p.pos.y <= terrainY || hitTarget || p.pos.y < -50) {
+                    p.active = false;
+
+                    const impactPoint = new THREE.Vector3(p.pos.x, Math.max(terrainY, p.pos.y), p.pos.z);
+                    scene.remove(p.mesh);
+                    activeProjectiles.splice(i, 1);
+
+                    handleImpact(impactPoint, hitTarget, p.typeId);
+
+                    if (activeFollowShell === p) {
+                        activeFollowShell = null;
+                        document.getElementById('flight-steer-hint').classList.add('hidden');
+                        setTimeout(() => {
+                            if (cameraMode === 'FOLLOW') {
+                                cameraMode = 'SCOPE';
+                                document.getElementById('cam-mode-text').innerText = UText.viewScope;
+                                document.getElementById('scope-overlay').style.opacity = "1";
+                            }
+                        }, 1800);
+                    }
+                }
+            }
+        }
+
+        // --- IMPACT FX & MEME TARGET REACTIONS ---
+        function handleImpact(pos, target, ammoTypeId) {
+            const isCatfish = (ammoTypeId === 'catfish');
+            playSplashSound(isCatfish);
+
+            if (isCatfish) {
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 400);
+            }
+
+            // Explosion Particles
+            const count = isCatfish ? 120 : 60;
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const vels = [];
+
+            for (let i = 0; i < count; i++) {
+                positions[i * 3] = pos.x;
+                positions[i * 3 + 1] = pos.y + 0.8;
+                positions[i * 3 + 2] = pos.z;
+
+                vels.push(new THREE.Vector3(
+                    (Math.random() - 0.5) * (isCatfish ? 70 : 35),
+                    Math.random() * 35 + 10,
+                    (Math.random() - 0.5) * (isCatfish ? 70 : 35)
+                ));
+            }
+
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({ color: isCatfish ? 0xff3300 : 0x33ffff, size: 5.0, transparent: true, opacity: 1 });
+            const pSystem = new THREE.Points(geo, mat);
+            scene.add(pSystem);
+
+            explosions.push({
+                system: pSystem,
+                velocities: vels,
+                spawnTime: clock.getElapsedTime(),
+                duration: 1.5
+            });
+
+            const dist = Math.round(pos.distanceTo(spgGroup.position));
+
+            if (target) {
+                target.destroyed = true;
+                memeTrophies++;
+                document.getElementById('score-val').innerText = `${memeTrophies} ⭐`;
+
+                if (target.type === 'cat_box') {
+                    playMeowSound();
+                    showHitNotification(`${UText.msgCatFly} (${dist}m)`, "hud-pink");
+                    target.mesh.position.y += 100;
+
+                } else if (target.type === 'grandma') {
+                    showHitNotification(`${UText.msgGrandmaFly} (${dist}m)`, "hud-amber");
+                    target.mesh.position.y += 80;
+
+                } else if (target.type === 'goose') {
+                    playHonkSound();
+                    showHitNotification(`${UText.msgGooseHonk} (${dist}m)`, "hud-cyan");
+                    target.mesh.rotation.z = Math.PI / 2;
+
+                } else if (target.type === 'zhiguli') {
+                    showHitNotification(`${UText.msgZhiguliDrift} (${dist}m)`, "hud-amber");
+                    target.mesh.rotation.y += Math.PI;
+
+                } else {
+                    showHitNotification(`${UText.msgHedgehogHit} (${dist}m)`, "hud-text");
+                    target.mesh.scale.set(1.2, 0.2, 1.2);
+                }
+            } else {
+                if (isCatfish) {
+                    showHitNotification(`${UText.msgCatfishSplash} (${dist}m)`, "hud-amber");
+                } else if (ammoTypeId === 'baguette') {
+                    showHitNotification(`${UText.msgBreadPigeons} (${dist}m)`, "hud-cyan");
+                } else {
+                    showHitNotification(`${UText.msgSplashGround} (${dist}m)`, "hud-text");
+                }
+            }
+        }
+
+        function updateExplosions(delta) {
+            const now = clock.getElapsedTime();
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const exp = explosions[i];
+                const age = now - exp.spawnTime;
+                if (age > exp.duration) {
+                    scene.remove(exp.system);
+                    explosions.splice(i, 1);
+                    continue;
+                }
+
+                const posAttr = exp.system.geometry.attributes.position;
+                for (let j = 0; j < exp.velocities.length; j++) {
+                    let x = posAttr.getX(j) + exp.velocities[j].x * delta;
+                    let y = posAttr.getY(j) + exp.velocities[j].y * delta;
+                    let z = posAttr.getZ(j) + exp.velocities[j].z * delta;
+                    exp.velocities[j].y -= 9.8 * delta;
+                    posAttr.setXYZ(j, x, y, z);
+                }
+                posAttr.needsUpdate = true;
+                exp.system.material.opacity = 1.0 - (age / exp.duration);
+            }
+        }
+
+        function showHitNotification(text, colorClass) {
+            const container = document.getElementById('hit-notification-container');
+            const el = document.createElement('div');
+            el.className = `hit-notification inline-block text-base md:text-2xl font-black tracking-widest px-5 py-2.5 rounded-2xl hud-panel ${colorClass}`;
+            el.innerHTML = text;
+            container.appendChild(el);
+
+            setTimeout(() => {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            }, 2500);
+        }
+
+        // --- CAMERA SYSTEM ---
+        function updateCamera() {
+            if (cameraMode === 'SCOPE') {
+                const scopePos = new THREE.Vector3();
+                barrelGroup.getWorldPosition(scopePos);
+                
+                const camOffset = new THREE.Vector3(0, 1.2, 0.5);
+                camOffset.applyQuaternion(barrelGroup.getWorldQuaternion(new THREE.Quaternion()));
+                camera.position.copy(scopePos).add(camOffset);
+
+                const forward = new THREE.Vector3(0, 0, -50);
+                forward.applyQuaternion(barrelGroup.getWorldQuaternion(new THREE.Quaternion()));
+                camera.lookAt(camera.position.clone().add(forward));
+
+            } else if (cameraMode === 'FOLLOW' && activeFollowShell && activeFollowShell.active) {
+                const shellPos = activeFollowShell.pos;
+                const velNorm = activeFollowShell.vel.clone().normalize();
+                const camOffset = velNorm.clone().multiplyScalar(-18).add(new THREE.Vector3(0, 6, 0));
+                
+                camera.position.copy(shellPos).add(camOffset);
+                camera.lookAt(shellPos);
+
+                // Update Flight Telemetry Card
+                document.getElementById('flight-alt-val').innerText = Math.max(0, Math.round(shellPos.y));
+                document.getElementById('flight-dist-val').innerText = Math.round(shellPos.distanceTo(spgGroup.position));
+
+            } else if (cameraMode === 'ORBIT') {
+                orbitCamAngle += 0.003;
+                const radius = 25;
+                camera.position.x = spgGroup.position.x + radius * Math.sin(orbitCamAngle);
+                camera.position.z = spgGroup.position.z + radius * Math.cos(orbitCamAngle);
+                camera.position.y = spgGroup.position.y + 10;
+                camera.lookAt(spgGroup.position.clone().add(new THREE.Vector3(0, 3, 0)));
+            }
+        }
+
+        // --- AIM & CONTROLS ---
+        function updateAim(delta) {
+            targetYaw += yawVelocity;
+            targetPitch += pitchVelocity;
+
+            targetYaw = Math.max(-80, Math.min(80, targetYaw));
+            targetPitch = Math.max(-3, Math.min(75, targetPitch));
+
+            const lerpFactor = Math.min(1.0, delta * 12.0);
+            currentYaw += (targetYaw - currentYaw) * lerpFactor;
+            currentPitch += (targetPitch - currentPitch) * lerpFactor;
+
+            turretGroup.rotation.y = THREE.MathUtils.degToRad(-currentYaw);
+            barrelGroup.rotation.x = THREE.MathUtils.degToRad(currentPitch);
+
+            document.getElementById('azimuth-val').innerText = `${currentYaw.toFixed(1)}°`;
+            document.getElementById('elevation-val').innerText = `${currentPitch >= 0 ? '+' : ''}${currentPitch.toFixed(1)}°`;
+
+            const v0 = muzzleVelocities[chargeLevel] * ammoTypes[currentAmmoIdx].speedMult;
+            const rad = THREE.MathUtils.degToRad(Math.max(0, currentPitch));
+            const estRange = Math.round((Math.pow(v0, 2) * Math.sin(2 * rad)) / GRAVITY);
+            document.getElementById('est-range-val').innerText = `${estRange} м`;
+        }
+
+        function resetAim() {
+            targetYaw = 0;
+            targetPitch = 45;
+            yawVelocity = 0;
+            pitchVelocity = 0;
+        }
+
+        function cycleAmmo() {
+            currentAmmoIdx = (currentAmmoIdx + 1) % ammoTypes.length;
+            const a = ammoTypes[currentAmmoIdx];
+            document.getElementById('lbl-ammo-btn').innerHTML = `${UText.ammoBtnPrefix} ${a.name}`;
+            document.getElementById('ammo-name-text').innerHTML = a.name;
+        }
+
+        function toggleCharge() {
+            chargeLevel = (chargeLevel % 3) + 1;
+            document.getElementById('lbl-charge-btn').innerText = `${UText.chargeLabel}: ${chargeNames[chargeLevel]}`;
+        }
+
+        function toggleSensitivity() {
+            sensitivityIdx = (sensitivityIdx + 1) % sensitivityLevels.length;
+            document.getElementById('lbl-sens-btn').innerText = `${UText.sensLabel}: ${sensitivityNames[sensitivityIdx]}`;
+        }
+
+        function toggleCameraMode() {
+            if (cameraMode === 'SCOPE') {
+                cameraMode = 'ORBIT';
+                document.getElementById('cam-mode-text').innerHTML = UText.view360;
+                document.getElementById('scope-overlay').style.opacity = "0";
+            } else {
+                cameraMode = 'SCOPE';
+                document.getElementById('cam-mode-text').innerText = UText.viewScope;
+                document.getElementById('scope-overlay').style.opacity = "1";
+            }
+        }
+
+        function toggleZoom() {
+            currentZoomIdx = (currentZoomIdx + 1) % zoomLevels.length;
+            const zoomVal = zoomLevels[currentZoomIdx];
+            camera.fov = 50 / zoomVal;
+            camera.updateProjectionMatrix();
+            document.getElementById('zoom-val').innerText = `${zoomVal}x`;
+        }
+
+        // --- MINIMAP ---
+        function drawMinimap() {
+            const canvas = document.getElementById('minimap');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.fillStyle = '#081a12';
+            ctx.fillRect(0, 0, w, h);
+
+            const displayRange = 5000;
+            const mapScale = w / displayRange;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            ctx.strokeStyle = 'rgba(51, 255, 170, 0.15)';
+            ctx.lineWidth = 1;
+            for (let g = -4000; g <= 4000; g += 1000) {
+                const gx = cx + g * mapScale;
+                const gy = cy + g * mapScale;
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+            }
+
+            const spgX = cx + spgGroup.position.x * mapScale;
+            const spgZ = cy + spgGroup.position.z * mapScale;
+
+            ctx.fillStyle = '#33ffaa';
+            ctx.beginPath();
+            ctx.arc(spgX, spgZ, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Targets
+            targets.forEach(t => {
+                const tx = cx + t.position.x * mapScale;
+                const tz = cy + t.position.z * mapScale;
+
+                ctx.fillStyle = t.destroyed ? '#555555' : '#ffcc00';
+                ctx.beginPath();
+                ctx.arc(tx, tz, 3.8, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function onMinimapClick(e) {
+            const rect = e.target.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - 52.5;
+            const clickZ = e.clientY - rect.top - 52.5;
+
+            let angle = Math.atan2(-clickX, -clickZ) * (180 / Math.PI);
+            targetYaw = Math.max(-80, Math.min(80, angle));
+        }
+
+        // --- INPUT LISTENERS & TOUCH STEERING ---
+        function setupInputListeners() {
+            const keys = {};
+
+            window.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+                if (e.key === ' ') fireCannon();
+                if (e.key.toLowerCase() === 'c') toggleCameraMode();
+                if (e.key.toLowerCase() === 'z') toggleZoom();
+            });
+
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+            });
+
+            // Touch Drag / Swipe Aiming
+            let isDragging = false;
+            let previousTouchX = 0;
+            let previousTouchY = 0;
+
+            const container = document.getElementById('canvas-container');
+
+            const onPointerDown = (e) => {
+                if (e.target.closest('.pointer-events-auto')) return;
+                isDragging = true;
+                previousTouchX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                previousTouchY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDragging) return;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+                const deltaX = clientX - previousTouchX;
+                const deltaY = clientY - previousTouchY;
+
+                previousTouchX = clientX;
+                previousTouchY = clientY;
+
+                const sens = sensitivityLevels[sensitivityIdx];
+                targetYaw -= deltaX * sens * 1.5;
+                targetPitch -= deltaY * sens * 1.2;
+            };
+
+            const onPointerUp = () => { isDragging = false; };
+
+            container.addEventListener('mousedown', onPointerDown);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+
+            container.addEventListener('touchstart', onPointerDown, { passive: true });
+            window.addEventListener('touchmove', onPointerMove, { passive: true });
+            window.addEventListener('touchend', onPointerUp);
+
+            // D-Pad Touch Actions
+            const touchState = { up: false, down: false, left: false, right: false };
+
+            function bindTouchButton(btnId, stateKey) {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+
+                const start = (e) => {
+                    e.preventDefault();
+                    touchState[stateKey] = true;
+                    btn.classList.add('active');
+                };
+
+                const end = (e) => {
+                    e.preventDefault();
+                    touchState[stateKey] = false;
+                    btn.classList.remove('active');
+                };
+
+                btn.addEventListener('pointerdown', start);
+                btn.addEventListener('pointerup', end);
+                btn.addEventListener('pointercancel', end);
+                btn.addEventListener('mouseleave', end);
+            }
+
+            bindTouchButton('btn-up', 'up');
+            bindTouchButton('btn-down', 'down');
+            bindTouchButton('btn-left', 'left');
+            bindTouchButton('btn-right', 'right');
+
+            setInterval(() => {
+                const speed = sensitivityLevels[sensitivityIdx] * 7.5;
+
+                // If projectile airborne in fly-cam, steering applies to shell!
+                if (activeFollowShell && activeFollowShell.active) {
+                    const steerForce = 12.0;
+                    if (keys['w'] || keys['arrowup'] || touchState.up) activeFollowShell.vel.y += steerForce * 0.15;
+                    if (keys['s'] || keys['arrowdown'] || touchState.down) activeFollowShell.vel.y -= steerForce * 0.15;
+                    if (keys['a'] || keys['arrowleft'] || touchState.left) activeFollowShell.vel.x -= steerForce * 0.2;
+                    if (keys['d'] || keys['arrowright'] || touchState.right) activeFollowShell.vel.x += steerForce * 0.2;
+
+                } else {
+                    // Normal SPG Gun Aiming
+                    yawVelocity = 0;
+                    pitchVelocity = 0;
+
+                    if (keys['w'] || keys['arrowup'] || touchState.up) pitchVelocity += speed;
+                    if (keys['s'] || keys['arrowdown'] || touchState.down) pitchVelocity -= speed;
+                    if (keys['a'] || keys['arrowleft'] || touchState.left) yawVelocity -= speed;
+                    if (keys['d'] || keys['arrowright'] || touchState.right) yawVelocity += speed;
+                }
+            }, 16);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- RENDER LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            updateAim(delta);
+            updateProjectiles(delta);
+            updateExplosions(delta);
+            updateReloading(delta);
+            updateCamera();
+            drawMinimap();
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            initEngine();
+        };
+    </script>
+</body>
+</html>

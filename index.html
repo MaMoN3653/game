@@ -125,40 +125,40 @@
             <div class="hud-panel p-2 md:p-3 rounded-xl pointer-events-auto flex flex-col gap-0.5 text-xs">
                 <div class="flex items-center gap-1.5 border-b border-green-400/40 pb-1">
                     <i class="fa-solid fa-fish-fins hud-text text-sm"></i>
-                    <span id="lbl-app-title" class="font-bold tracking-wider text-xs md:text-sm hud-text">лАлљлБ "люлЋлю-3000"</span>
+                    <span id="lbl-app-title" class="font-bold tracking-wider text-xs md:text-sm hud-text">САУ "МЕМ-3000"</span>
                 </div>
                 <div class="flex justify-between gap-3 mt-0.5">
-                    <span id="lbl-ammo-title" class="opacity-80">лЉлълЋлЪлалўлЪлљлА:</span>
-                    <span id="ammo-name-text" class="hud-amber font-bold">1. лЕлБлџлљ ­ЪљЪ</span>
+                    <span id="lbl-ammo-title" class="opacity-80">БОЕПРИПАС:</span>
+                    <span id="ammo-name-text" class="hud-amber font-bold">1. ЩУКА 🐟</span>
                 </div>
                 <div class="flex justify-between gap-3">
-                    <span id="lbl-view-title" class="opacity-80">лњлўлћ:</span>
-                    <span id="cam-mode-text" class="hud-pink font-bold">лЪлалўлдлЋлЏ</span>
+                    <span id="lbl-view-title" class="opacity-80">ВИД:</span>
+                    <span id="cam-mode-text" class="hud-pink font-bold">ПРИЦЕЛ</span>
                 </div>
             </div>
 
             <!-- Center Telemetry Display -->
             <div class="hud-panel px-3 py-1.5 md:px-6 md:py-2 rounded-xl flex gap-3 md:gap-6 text-center">
                 <div>
-                    <div id="lbl-azimuth" class="text-[9px] md:text-[10px] opacity-80">лљлЌлўлюлБлб</div>
-                    <div id="azimuth-val" class="text-base md:text-2xl font-black hud-text">000.0┬░</div>
+                    <div id="lbl-azimuth" class="text-[9px] md:text-[10px] opacity-80">АЗИМУТ</div>
+                    <div id="azimuth-val" class="text-base md:text-2xl font-black hud-text">000.0°</div>
                 </div>
                 <div class="border-r border-green-400/30"></div>
                 <div>
-                    <div id="lbl-elevation" class="text-[9px] md:text-[10px] opacity-80">лБлЊлълЏ лАлблњлълЏлљ</div>
-                    <div id="elevation-val" class="text-base md:text-2xl font-black hud-text">+45.0┬░</div>
+                    <div id="lbl-elevation" class="text-[9px] md:text-[10px] opacity-80">УГОЛ СТВОЛА</div>
+                    <div id="elevation-val" class="text-base md:text-2xl font-black hud-text">+45.0°</div>
                 </div>
                 <div class="border-r border-green-400/30"></div>
                 <div>
-                    <div id="lbl-range" class="text-[9px] md:text-[10px] opacity-80">лћлљлЏлглЮлълАлблг</div>
-                    <div id="est-range-val" class="text-base md:text-2xl font-black hud-amber">2800 л╝</div>
+                    <div id="lbl-range" class="text-[9px] md:text-[10px] opacity-80">ДАЛЬНОСТЬ</div>
+                    <div id="est-range-val" class="text-base md:text-2xl font-black hud-amber">2800 м</div>
                 </div>
             </div>
 
             <!-- Right Telemetry: Meme Trophies Score -->
             <div class="hud-panel p-2 rounded-xl text-right text-xs pointer-events-auto hidden sm:block">
-                <div id="lbl-trophies" class="text-[10px] opacity-80">люлЋлю-лблалълцлЋлў</div>
-                <div id="score-val" class="text-xl font-black hud-pink">0 РГљ</div>
+                <div id="lbl-trophies" class="text-[10px] opacity-80">МЕМ-ТРОФЕИ</div>
+                <div id="score-val" class="text-xl font-black hud-pink">0 ⭐</div>
             </div>
         </div>
 
@@ -174,28 +174,28 @@
                 <div class="w-[30%] h-[30%] rounded-full border border-dashed border-green-400/50"></div>
                 
                 <div class="absolute w-full flex justify-between px-6 text-[9px] md:text-[10px] hud-text">
-                    <span>-60┬░</span><span>-30┬░</span><span>0┬░</span><span>30┬░</span><span>60┬░</span>
+                    <span>-60°</span><span>-30°</span><span>0°</span><span>30°</span><span>60°</span>
                 </div>
                 <div class="absolute h-full flex flex-col justify-between py-6 text-[9px] md:text-[10px] hud-text items-center">
-                    <span>+75┬░</span><span>+50┬░</span><span>+25┬░</span><span>0┬░</span>
+                    <span>+75°</span><span>+50°</span><span>+25°</span><span>0°</span>
                 </div>
             </div>
             <div id="aim-hint" class="absolute bottom-28 text-[11px] hud-text opacity-80 bg-black/70 px-3 py-1 rounded-lg border border-green-400/40">
-                <i class="fa-solid fa-hand-pointer mr-1"></i> <span id="lbl-hint-text">лАлњлљлЎлЪ лћлЏл» лЮлљлњлЋлћлЋлЮлўл» / лџлЮлълЪлџлў лћлЏл» лАлблалЋлЏлглЉлФ</span>
+                <i class="fa-solid fa-hand-pointer mr-1"></i> <span id="lbl-hint-text">СВАЙП ДЛЯ НАВЕДЕНИЯ / КНОПКИ ДЛЯ СТРЕЛЬБЫ</span>
             </div>
         </div>
 
         <!-- COMPACT IN-FLIGHT TELEMETRY HUD (Top Right, Non-Intrusive) -->
         <div id="flight-steer-hint" class="absolute top-16 right-4 hud-panel px-3 py-2 rounded-xl text-right hidden pointer-events-auto border border-yellow-400/60 shadow-lg bg-black/70 backdrop-blur-sm max-w-[210px]">
             <div class="hud-cyan font-bold text-xs flex items-center justify-end gap-1">
-                <span id="lbl-flight-hud-title">­Ъџђ лЪлълЏлЂлб лАлЮлљлал»лћлљ</span>
+                <span id="lbl-flight-hud-title">🚀 ПОЛЁТ СНАРЯДА</span>
             </div>
             <div class="text-[10px] opacity-90 mt-0.5">
-                <span id="lbl-flight-alt">лњлФлАлълблљ</span>: <span id="flight-alt-val" class="hud-amber font-bold">0</span>л╝<br>
-                <span id="lbl-flight-dist">лћлўлАлб</span>: <span id="flight-dist-val" class="hud-amber font-bold">0</span>л╝
+                <span id="lbl-flight-alt">ВЫСОТА</span>: <span id="flight-alt-val" class="hud-amber font-bold">0</span>м<br>
+                <span id="lbl-flight-dist">ДИСТ</span>: <span id="flight-dist-val" class="hud-amber font-bold">0</span>м
             </div>
             <button onclick="doBarrelRoll()" class="mt-1 bg-pink-600/80 hover:bg-pink-500 active:scale-95 text-white font-black text-[10px] px-2.5 py-1 rounded-md border border-pink-300">
-                ­Ъїђ <span id="lbl-btn-roll">лЉлълДлџлљ!</span>
+                🌀 <span id="lbl-btn-roll">БОЧКА!</span>
             </button>
         </div>
 
@@ -232,32 +232,32 @@
                 
                 <!-- Main Fire Button -->
                 <button id="fire-btn" onclick="fireCannon()" class="hud-panel relative px-5 py-2.5 md:px-8 md:py-3 rounded-2xl text-base md:text-lg font-black tracking-widest text-amber-300 border-2 border-yellow-400/80 hover:border-yellow-300 active:scale-95 transition-all shadow-[0_0_22px_rgba(255,200,0,0.5)]">
-                    ­Ъџђ <span id="lbl-fire-text">лълЊлълЮлг люлЋлюлълю!</span> ­ЪљЪ
+                    🚀 <span id="lbl-fire-text">ОГОНЬ МЕМОМ!</span> 🐟
                 </button>
 
                 <!-- Action Toolbar Row 1: Ammo & Charge -->
                 <div class="flex gap-1 text-[11px] flex-wrap justify-center">
                     <button onclick="cycleAmmo()" id="btn-ammo-toggle" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-amber font-bold">
-                        ­ЪњБ <span id="lbl-ammo-btn">лАлЮлљлал»лћ: лЕлБлџлљ ­ЪљЪ</span>
+                        💣 <span id="lbl-ammo-btn">СНАРЯД: ЩУКА 🐟</span>
                     </button>
                     <button onclick="toggleCharge()" id="btn-charge-toggle" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-text font-bold">
-                        РџА <span id="lbl-charge-btn">лЌлљлал»лћ: лАлалЋлћлЮлўлЎ</span>
+                        ⚡ <span id="lbl-charge-btn">ЗАРЯД: СРЕДНИЙ</span>
                     </button>
                 </div>
 
                 <!-- Action Toolbar Row 2: Camera, Zoom, BGM -->
                 <div class="flex gap-1 text-[11px] flex-wrap justify-center">
                     <button onclick="toggleSensitivity()" id="btn-sens-toggle" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-text font-bold">
-                        ­ЪјЏ№ИЈ <span id="lbl-sens-btn">лДлБлњлАлблњ: лАлалЋлћ</span>
+                        🎛️ <span id="lbl-sens-btn">ЧУВСТВ: СРЕД</span>
                     </button>
                     <button onclick="toggleCameraMode()" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-pink font-bold">
-                        ­ЪЊ╣ <span id="lbl-cam-btn">лЪлълЏлЂлб</span>
+                        📹 <span id="lbl-cam-btn">ПОЛЁТ</span>
                     </button>
                     <button onclick="toggleZoom()" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-text">
-                        ­ЪћЇ <span id="zoom-val">2.5x</span>
+                        🔍 <span id="zoom-val">2.5x</span>
                     </button>
                     <button onclick="toggleBGM()" id="bgm-btn" class="px-2 py-1 rounded-lg hud-panel hover:bg-green-500/20 hud-cyan font-bold">
-                        ­Ъјх <span id="lbl-bgm-btn">люлБлЌлФлџлљ: лњлџлЏ</span>
+                        🎵 <span id="lbl-bgm-btn">МУЗЫКА: ВКЛ</span>
                     </button>
                 </div>
             </div>
@@ -265,8 +265,8 @@
             <!-- TACTICAL MINIMAP -->
             <div class="hud-panel p-1 rounded-2xl flex flex-col items-center relative z-30">
                 <div class="text-[9px] font-bold hud-text mb-0.5 uppercase tracking-wider flex justify-between w-full px-1">
-                    <span id="lbl-minimap">люлЋлю-лџлљлалблљ</span>
-                    <span class="hud-amber">5000л╝</span>
+                    <span id="lbl-minimap">МЕМ-КАРТА</span>
+                    <span class="hud-amber">5000м</span>
                 </div>
                 <canvas id="minimap" width="105" height="105" class="rounded-xl border border-green-400/50 bg-black/80 cursor-pointer" onclick="onMinimapClick(event)"></canvas>
             </div>
@@ -371,10 +371,10 @@
         // Ammo Types
         let currentAmmoIdx = 0;
         const ammoTypes = [
-            { id: 'pike', name: UText.ammoPike, speedMult: 1.0, icon: '­ЪљЪ' },
-            { id: 'catfish', name: UText.ammoCatfish, speedMult: 0.82, icon: '­ЪљІ' },
-            { id: 'sardines', name: UText.ammoSardines, speedMult: 1.05, icon: '­ЪЦФ' },
-            { id: 'baguette', name: UText.ammoBread, speedMult: 0.95, icon: '­ЪЇъ' }
+            { id: 'pike', name: UText.ammoPike, speedMult: 1.0, icon: '🐟' },
+            { id: 'catfish', name: UText.ammoCatfish, speedMult: 0.82, icon: '🐋' },
+            { id: 'sardines', name: UText.ammoSardines, speedMult: 1.05, icon: '🥫' },
+            { id: 'baguette', name: UText.ammoBread, speedMult: 0.95, icon: '🍞' }
         ];
 
         // Charges
@@ -415,7 +415,7 @@
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
 
-            // Beer Can "лЪлелўлџ!" Pop
+            // Beer Can "ПШИК!" Pop
             const popBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
             const popData = popBuffer.getChannelData(0);
             for (let i = 0; i < popData.length; i++) {
@@ -912,7 +912,7 @@
                 const fireBtn = document.getElementById('fire-btn');
                 fireBtn.disabled = false;
                 fireBtn.classList.remove('opacity-50');
-                fireBtn.innerHTML = `­Ъџђ <span id="lbl-fire-text">${UText.fireText}</span> ­ЪљЪ`;
+                fireBtn.innerHTML = `🚀 <span id="lbl-fire-text">${UText.fireText}</span> 🐟`;
             }
         }
 
@@ -1036,7 +1036,7 @@
             if (target) {
                 target.destroyed = true;
                 memeTrophies++;
-                document.getElementById('score-val').innerText = `${memeTrophies} РГљ`;
+                document.getElementById('score-val').innerText = `${memeTrophies} ⭐`;
 
                 if (target.type === 'cat_box') {
                     playMeowSound();
@@ -1158,13 +1158,13 @@
             turretGroup.rotation.y = THREE.MathUtils.degToRad(-currentYaw);
             barrelGroup.rotation.x = THREE.MathUtils.degToRad(currentPitch);
 
-            document.getElementById('azimuth-val').innerText = `${currentYaw.toFixed(1)}┬░`;
-            document.getElementById('elevation-val').innerText = `${currentPitch >= 0 ? '+' : ''}${currentPitch.toFixed(1)}┬░`;
+            document.getElementById('azimuth-val').innerText = `${currentYaw.toFixed(1)}°`;
+            document.getElementById('elevation-val').innerText = `${currentPitch >= 0 ? '+' : ''}${currentPitch.toFixed(1)}°`;
 
             const v0 = muzzleVelocities[chargeLevel] * ammoTypes[currentAmmoIdx].speedMult;
             const rad = THREE.MathUtils.degToRad(Math.max(0, currentPitch));
             const estRange = Math.round((Math.pow(v0, 2) * Math.sin(2 * rad)) / GRAVITY);
-            document.getElementById('est-range-val').innerText = `${estRange} л╝`;
+            document.getElementById('est-range-val').innerText = `${estRange} м`;
         }
 
         function resetAim() {

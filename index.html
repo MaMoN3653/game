@@ -1,1455 +1,446 @@
-<!DOCTYPE html>
-<html lang="ru" class="h-full w-full select-none">
+<!DOCTYPE1 html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>БеЛАЗ 75710: Смена в ТикТоке</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>САУ Симулятор: МЕМНАЯ АРТИЛЛЕРИЯ 3D</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Impact', 'Arial Black', sans-serif; color: #fff; }
+    #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-    <!-- Firebase App & Realtime Database SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    /* UI Overlays */
+    .hud-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; }
+    .interactive { pointer-events: auto; }
 
-    <style>
-        * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
+    /* Glassmorphism Panel */
+    .panel { background: rgba(15, 25, 15, 0.65); backdrop-filter: blur(8px); border: 2px solid rgba(100, 255, 100, 0.4); border-radius: 12px; padding: 10px 14px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); color: #8eff8e; text-shadow: 0 0 4px #000; }
 
-        body {
-            font-family: 'Rubik', sans-serif;
-            background-color: #05070a;
-            overflow: hidden;
-            height: 100%;
-            width: 100%;
-            position: fixed;
-        }
+    /* Scope overlay */
+    #scope-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; display: none; }
+    .scope-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(85vw, 85vh); height: min(85vw, 85vh); border-radius: 50%; border: 3px solid rgba(0, 255, 100, 0.8); box-shadow: 0 0 0 2000px rgba(0, 10, 0, 0.92); }
+    .scope-cross-v { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: rgba(0, 255, 100, 0.6); transform: translateX(-50%); }
+    .scope-cross-h { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(0, 255, 100, 0.6); transform: translateY(-50%); }
 
-        .pixel-font {
-            font-family: 'Press Start 2P', monospace;
-        }
+    /* Top Bar */
+    .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%; }
+    .title-box { font-size: 1.2rem; color: #ffe600; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
 
-        .phone-container {
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: transform;
-        }
+    /* Minimap */
+    #minimap-card { width: 120px; height: 120px; border-radius: 50%; border: 2px solid #55ff55; background: rgba(0, 30, 0, 0.7); position: relative; overflow: hidden; }
+    #minimap-canvas { width: 100%; height: 100%; }
 
-        .phone-hidden {
-            transform: translate(-50%, 128%) !important;
-            pointer-events: none !important;
-        }
+    /* Compact Flight Overlay in Top Corner */
+    #flight-hud { position: absolute; top: 12px; right: 12px; z-index: 25; display: none; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); border: 1.5px solid #ffcc00; border-radius: 8px; padding: 8px 12px; pointer-events: none; color: #fff; font-size: 0.85rem; }
+    #flight-hud .flight-title { color: #ffe600; font-weight: bold; font-size: 0.95rem; text-align: center; margin-bottom: 2px; }
 
-        .phone-visible {
-            transform: translate(-50%, 0) !important;
-        }
+    /* Touch Controls */
+    .controls-container { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-bottom: 6px; }
+    .dpad-container { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 4px; }
+    .btn-dpad { background: rgba(20, 60, 20, 0.6); border: 2px solid #55ff55; color: #fff; font-size: 1.4rem; font-weight: bold; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .btn-dpad:active { background: rgba(100, 255, 100, 0.6); transform: scale(0.95); }
 
-        @keyframes cabinShake {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(-5px, 6px) rotate(-1deg); }
-            50% { transform: translate(6px, -5px) rotate(1deg); }
-            75% { transform: translate(-4px, -4px) rotate(-0.5deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
+    .action-panel { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .btn-action { background: linear-gradient(180deg, #ff8800, #cc3300); border: 2px solid #ffaa00; color: #fff; padding: 12px 20px; font-size: 1.1rem; border-radius: 12px; font-family: inherit; font-weight: bold; cursor: pointer; text-shadow: 0 2px 4px #000; box-shadow: 0 4px 15px rgba(255, 100, 0, 0.4); }
+    .btn-action:active { transform: scale(0.95); background: #ffaa00; }
+    .btn-sec { background: rgba(20, 40, 20, 0.7); border: 1.5px solid #77ff77; color: #77ff77; padding: 8px 12px; font-size: 0.85rem; border-radius: 8px; font-family: inherit; cursor: pointer; }
 
-        @keyframes hardBump {
-            0% { transform: translateY(0); }
-            30% { transform: translateY(-22px) rotate(2deg); }
-            60% { transform: translateY(12px) rotate(-1deg); }
-            100% { transform: translateY(0); }
-        }
+    /* Meme Notifications */
+    #meme-banner { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%) scale(0); z-index: 30; font-size: 2.2rem; color: #ffe600; text-shadow: 3px 3px 0 #ff0055, -2px -2px 0 #000; text-align: center; pointer-events: none; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.27); width: 90%; }
+    #meme-banner.active { transform: translate(-50%, -50%) scale(1); }
 
-        .shake {
-            animation: cabinShake 0.12s ease-in-out infinite;
-        }
-
-        .bump-anim {
-            animation: hardBump 0.45s ease-out;
-        }
-
-        @keyframes engineVibe {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(1.5px); }
-        }
-
-        .engine-idle {
-            animation: engineVibe 0.18s ease-in-out infinite;
-        }
-
-        @keyframes spinSlow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-disc {
-            animation: spinSlow 4s linear infinite;
-        }
-
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .speech-bubble {
-            position: relative;
-            background: #ffffff;
-            border-radius: 1rem;
-            border: 3px solid #000000;
-            color: #000000;
-            box-shadow: 4px 4px 0px #000000;
-        }
-        .speech-bubble:after {
-            content: '';
-            position: absolute;
-            bottom: -14px;
-            left: 20px;
-            border-width: 14px 12px 0;
-            border-style: solid;
-            border-color: #ffffff transparent;
-            display: block;
-            width: 0;
-        }
-        .speech-bubble:before {
-            content: '';
-            position: absolute;
-            bottom: -18px;
-            left: 18px;
-            border-width: 16px 14px 0;
-            border-style: solid;
-            border-color: #000000 transparent;
-            display: block;
-            width: 0;
-        }
-
-        @keyframes floatHeart {
-            0% { transform: translateY(0) scale(0.8); opacity: 1; }
-            100% { transform: translateY(-80px) scale(1.4); opacity: 0; }
-        }
-        .floating-heart {
-            position: absolute;
-            animation: floatHeart 0.8s ease-out forwards;
-            pointer-events: none;
-            color: #ef4444;
-            font-size: 1.5rem;
-            z-index: 50;
-        }
-    </style>
+    .selector-row { display: flex; gap: 6px; margin-top: 4px; }
+    .btn-select { background: rgba(0,0,0,0.5); border: 1px solid #8eff8e; color: #8eff8e; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+    .btn-select.active { background: #ffe600; color: #000; font-weight: bold; border-color: #ffe600; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-<body class="h-full w-full flex items-center justify-center bg-slate-950 text-white overflow-hidden p-0 sm:p-2">
+<body>
+  <div id="canvas-container"></div>
 
-    <div id="game-container" class="relative w-full h-full sm:max-w-4xl sm:max-h-[880px] bg-slate-900 overflow-hidden shadow-2xl sm:rounded-3xl flex flex-col justify-between border-0 sm:border-4 border-slate-700">
+  <!-- Scope Overlay -->
+  <div id="scope-overlay">
+    <div class="scope-circle">
+      <div class="scope-cross-v"></div>
+      <div class="scope-cross-h"></div>
+    </div>
+  </div>
 
-        <!-- TOP BAR UI OVERLAY -->
-        <div class="absolute top-2 left-2 right-2 z-30 flex justify-between items-center pointer-events-none">
-            <div class="bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-yellow-500/50 flex items-center gap-2 sm:gap-4 shadow-2xl">
-                <div>
-                    <div class="text-[9px] sm:text-xs text-yellow-400 font-bold uppercase tracking-wider">Смена</div>
-                    <div id="score-display" class="text-xs sm:text-base font-black text-white pixel-font">00:00</div>
-                </div>
-                <div class="h-6 w-px bg-slate-700"></div>
-                <div>
-                    <div class="text-[9px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">ЗП</div>
-                    <div id="money-display" class="text-xs sm:text-base font-extrabold text-green-400">0 BYN</div>
-                </div>
-                <div class="h-6 w-px bg-slate-700"></div>
-                <div>
-                    <div class="text-[9px] sm:text-xs text-amber-400 font-bold uppercase tracking-wider">Уровень</div>
-                    <div id="level-display" class="text-xs sm:text-base font-black text-amber-300">Ур. 1</div>
-                </div>
-            </div>
+  <!-- Compact Flight HUD (Top Right, unobtrusive) -->
+  <div id="flight-hud">
+    <div class="flight-title">🚀 ПОЛЁТ СНАРЯДА</div>
+    <div>Высота: <span id="flight-alt" style="color:#ffe600;">0</span>м | Дист: <span id="flight-dist" style="color:#ffe600;">0</span>м</div>
+    <div style="font-size: 0.75rem; color:#aaa; margin-top: 2px;">Управление: W/A/S/D или Стрелки</div>
+  </div>
 
-            <div id="warning-box" class="bg-red-950/95 backdrop-blur-md border-2 border-red-600 px-3 py-1.5 rounded-2xl flex items-center gap-2 opacity-0 transition-all duration-150 transform scale-90 shadow-red-900/60 shadow-xl">
-                <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg animate-ping"></i>
-                <div>
-                    <div id="warning-title" class="text-[9px] text-red-300 font-bold uppercase leading-none">ТРЕВОГА!</div>
-                    <div id="warning-text" class="text-xs font-black text-red-400 uppercase tracking-wide leading-tight">ПЕРВЫЙ ОТДЕЛ!</div>
-                </div>
-            </div>
+  <!-- Meme Notification Banner -->
+  <div id="meme-banner">В САМЫЙ ПЯТАЧОК! 🎯</div>
 
-            <div class="pointer-events-auto">
-                <button id="sound-btn" class="w-10 h-10 bg-slate-800/90 active:bg-slate-700 border border-slate-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                    <i class="fa-solid fa-volume-high text-base"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="absolute top-16 left-2 right-2 z-20 pointer-events-none flex flex-col items-center">
-            <div class="w-full max-w-xs bg-black/75 backdrop-blur rounded-full h-3 border border-slate-700 p-0.5 overflow-hidden shadow-lg flex items-center">
-                <div id="productivity-bar" class="h-full bg-gradient-to-r from-emerald-500 via-yellow-400 to-green-400 rounded-full w-full transition-all duration-300"></div>
-            </div>
-            <span id="productivity-label" class="text-[9px] font-black tracking-widest uppercase text-slate-300 mt-0.5 drop-shadow">План Выработки: 100%</span>
-        </div>
-
-        <!-- CABIN VIEWPORT -->
-        <div id="cabin-viewport" class="relative w-full h-full engine-idle flex-1 bg-slate-800 overflow-hidden">
-            <div class="absolute top-0 left-0 right-0 h-3/5 bg-gradient-to-b from-sky-400 via-amber-200 to-amber-600 overflow-hidden">
-                <svg class="absolute bottom-0 w-full h-36 text-amber-800/80" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,96 L48,85.3 C96,75,192,53,288,58.7 C384,64,480,96,576,96 C672,96,768,64,864,58.7 C960,53,1056,75,1104,85.3 L1152,96 L1152,120 L0,120 Z" fill="currentColor"></path>
-                </svg>
-                <svg class="absolute bottom-0 w-full h-24 text-amber-900" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,40 L80,50 C160,60,320,80,480,75 C640,70,800,40,960,45 C1120,50,1200,70,1280,80 L1280,120 L0,120 Z" fill="currentColor"></path>
-                </svg>
-                <div class="absolute inset-0 bg-yellow-900/10 mix-blend-overlay"></div>
-                <div class="absolute inset-0 border-x-[20px] sm:border-x-[40px] border-t-[10px] border-amber-950/90 pointer-events-none"></div>
-                <div class="absolute left-1/3 top-0 bottom-0 w-3 sm:w-4 bg-amber-950/80 transform -skew-x-12"></div>
-                <div class="absolute right-1/3 top-0 bottom-0 w-3 sm:w-4 bg-amber-950/80 transform skew-x-12"></div>
-            </div>
-
-            <div class="absolute top-8 right-2 sm:right-6 w-36 sm:w-56 h-52 sm:h-72 border-4 sm:border-8 border-yellow-600/90 bg-slate-900/95 rounded-t-3xl overflow-hidden shadow-2xl z-10">
-                <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent z-20 pointer-events-none"></div>
-                
-                <div id="boss-character" class="absolute inset-0 flex flex-col items-center justify-end transform translate-y-full transition-transform duration-200 z-10">
-                    <div class="relative w-32 sm:w-44 h-48 sm:h-60 flex flex-col items-center">
-                        <div class="w-22 sm:w-30 h-9 sm:h-12 bg-slate-100 rounded-t-full border-b-2 sm:border-b-4 border-slate-300 relative flex items-center justify-center shadow-lg z-20">
-                            <div class="w-5 h-5 sm:w-7 sm:h-7 bg-red-600 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] text-white font-black border border-white">
-                                <i class="fa-solid fa-shield-halved"></i>
-                            </div>
-                            <div class="absolute -bottom-1.5 w-26 sm:w-36 h-2.5 sm:h-3.5 bg-slate-200 border-b-2 border-slate-400 rounded-full shadow-md"></div>
-                        </div>
-                        <div class="w-14 sm:w-20 h-14 sm:h-20 bg-amber-200 rounded-2xl relative border-2 border-amber-400 -mt-1 flex flex-col items-center justify-center z-10">
-                            <div class="flex gap-1.5 mt-1">
-                                <div class="w-3 sm:w-5 h-1.5 bg-black transform rotate-12"></div>
-                                <div class="w-3 sm:w-5 h-1.5 bg-black transform -rotate-12"></div>
-                            </div>
-                            <div class="flex gap-2 sm:gap-4 mt-1">
-                                <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full flex items-center justify-center">
-                                    <div class="w-1 h-1 bg-black rounded-full"></div>
-                                </div>
-                                <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full flex items-center justify-center">
-                                    <div class="w-1 h-1 bg-black rounded-full"></div>
-                                </div>
-                            </div>
-                            <div class="w-8 sm:w-12 h-2.5 sm:h-3 bg-neutral-900 rounded-full mt-1.5"></div>
-                        </div>
-                        <div class="w-28 sm:w-36 h-28 sm:h-36 bg-slate-900 rounded-t-3xl border-t-2 border-slate-700 flex flex-col items-center pt-2">
-                            <div class="w-8 sm:w-10 h-12 sm:h-16 bg-white clip-triangle flex flex-col items-center">
-                                <div class="w-2 sm:w-3 h-10 bg-red-700"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="fake-passerby" class="absolute inset-0 flex flex-col items-center justify-end transform translate-y-full transition-transform duration-300 z-10">
-                    <div class="relative w-28 sm:w-36 h-40 sm:h-48 flex flex-col items-center opacity-80">
-                        <div class="w-16 sm:w-20 h-7 sm:h-9 bg-orange-500 rounded-t-full border-b-2 border-orange-700"></div>
-                        <div class="w-12 sm:w-16 h-12 sm:h-16 bg-amber-200 rounded-xl border border-amber-400 -mt-1 flex items-center justify-center">
-                            <i class="fa-solid fa-face-smile text-black text-sm"></i>
-                        </div>
-                        <div class="w-20 sm:w-28 h-20 sm:h-28 bg-orange-600 rounded-t-2xl flex justify-center pt-1">
-                            <div class="w-3 h-full bg-yellow-300"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="absolute bottom-0 left-0 right-0 h-1/2 bg-neutral-900 border-t-4 sm:border-t-8 border-neutral-800 rounded-t-3xl shadow-inner z-10 flex justify-between items-end px-2 sm:px-8 pb-2">
-                <div class="relative w-32 sm:w-52 h-44 sm:h-64 flex flex-col items-center -ml-1 sm:-ml-4 z-20">
-                    <div id="worker-bubble" class="speech-bubble absolute -top-24 sm:-top-28 left-0 sm:-left-6 w-48 sm:w-64 p-2 sm:p-3 text-xs sm:text-sm font-extrabold text-black z-40 opacity-0 transition-all duration-200 pointer-events-none leading-tight">
-                        <span id="worker-text">«Спрячь сотовый, Михалыч не дремет!»</span>
-                    </div>
-
-                    <div class="relative w-18 h-18 sm:w-24 sm:h-24 bg-amber-300 rounded-full border-2 border-amber-500 flex flex-col items-center justify-center shadow-md">
-                        <div class="absolute -top-3 w-22 h-7 sm:w-32 sm:h-10 bg-yellow-400 border-b-2 sm:border-b-4 border-yellow-600 rounded-t-full shadow-md"></div>
-                        <div class="flex gap-1 mt-1">
-                            <div class="w-4 h-3 sm:w-6 sm:h-4 border border-black bg-sky-200/60 rounded"></div>
-                            <div class="w-4 h-3 sm:w-6 sm:h-4 border border-black bg-sky-200/60 rounded"></div>
-                        </div>
-                        <div class="w-12 h-6 sm:w-20 sm:h-10 bg-amber-800 rounded-b-xl mt-1"></div>
-                    </div>
-                    <div class="w-28 h-24 sm:w-40 sm:h-36 bg-orange-600 rounded-t-2xl border-t-2 sm:border-t-4 border-orange-400 relative flex justify-center">
-                        <div class="w-5 sm:w-8 h-full bg-slate-200/80 mx-1"></div>
-                        <div class="w-5 sm:w-8 h-full bg-slate-200/80 mx-1"></div>
-                    </div>
-                </div>
-
-                <div class="relative w-44 h-44 sm:w-72 sm:h-72 rounded-full border-[12px] sm:border-[22px] border-neutral-800 bg-transparent flex items-center justify-center shadow-2xl transform translate-y-12 sm:translate-y-20">
-                    <div class="absolute w-full h-3 sm:h-6 bg-neutral-800"></div>
-                    <div class="absolute h-full w-3 sm:w-6 bg-neutral-800"></div>
-                    <div class="w-16 h-16 sm:w-24 sm:h-24 bg-yellow-500 rounded-full border-2 sm:border-4 border-neutral-900 flex items-center justify-center shadow-md z-10">
-                        <span class="font-black text-black tracking-tighter text-[10px] sm:text-sm italic">БЕЛАЗ</span>
-                    </div>
-
-                    <div id="hands-on-wheel" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-150">
-                        <div class="absolute top-6 left-1 sm:top-12 sm:left-2 w-8 h-10 sm:w-12 sm:h-16 bg-amber-300 rounded-full border border-amber-500 transform -rotate-45"></div>
-                        <div class="absolute top-6 right-1 sm:top-12 sm:right-2 w-8 h-10 sm:w-12 sm:h-16 bg-amber-300 rounded-full border border-amber-500 transform rotate-45"></div>
-                    </div>
-                </div>
-
-                <div class="w-28 sm:w-48 h-28 sm:h-40 bg-neutral-800 rounded-xl border border-neutral-700 p-2 flex flex-col justify-between hidden sm:flex">
-                    <div class="flex justify-around">
-                        <div class="w-10 h-10 rounded-full border-2 border-yellow-500 bg-black flex items-center justify-center relative">
-                            <div class="w-0.5 h-4 bg-red-500 origin-bottom transform rotate-45"></div>
-                            <span class="absolute bottom-0.5 text-[7px] text-white">КМ/Ч</span>
-                        </div>
-                        <div class="w-10 h-10 rounded-full border-2 border-green-500 bg-black flex items-center justify-center relative">
-                            <div class="w-0.5 h-4 bg-green-400 origin-bottom transform -rotate-12"></div>
-                            <span class="absolute bottom-0.5 text-[7px] text-white">СОЛЯРА</span>
-                        </div>
-                    </div>
-
-                    <button id="radio-btn" class="pointer-events-auto h-9 bg-neutral-900 border-2 border-red-900 rounded-lg flex items-center justify-around px-2 active:scale-95 transition-all">
-                        <i id="radio-icon" class="fa-solid fa-walkie-talkie text-slate-500 text-xs"></i>
-                        <span id="radio-text" class="text-[9px] font-bold text-slate-400">РАЦИЯ МОЛЧИТ</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="mobile-radio-container" class="absolute top-28 left-3 z-30 sm:hidden opacity-0 pointer-events-none transition-opacity duration-200">
-            <button id="mobile-radio-btn" class="bg-red-600 active:bg-red-700 text-white text-xs font-black px-3 py-2 rounded-xl border-2 border-yellow-300 shadow-2xl flex items-center gap-2 animate-bounce">
-                <i class="fa-solid fa-walkie-talkie text-base"></i>
-                ОТВЕТИТЬ ДИСПЕТЧЕРУ!
-            </button>
-        </div>
-
-        <!-- SMARTPHONE CONTAINER -->
-        <div id="phone-wrapper" class="absolute bottom-2 left-1/2 z-40 phone-container phone-visible">
-            
-            <div class="relative w-[250px] sm:w-[290px] h-[390px] sm:h-[490px] bg-black rounded-[36px] p-2.5 border-4 border-slate-700 shadow-2xl flex flex-col justify-between">
-                
-                <div class="absolute top-3 left-1/2 transform -translate-x-1/2 w-20 h-3 bg-black rounded-b-lg z-50 flex justify-center items-center">
-                    <div class="w-6 h-1 bg-neutral-800 rounded-full"></div>
-                </div>
-
-                <!-- PHONE SCREEN -->
-                <div id="phone-screen" class="relative w-full h-full bg-slate-900 rounded-[28px] overflow-hidden flex flex-col justify-between border border-neutral-800">
-                    
-                    <!-- Status Bar -->
-                    <div class="h-5 w-full px-3 pt-1 flex justify-between items-center text-[9px] text-white font-semibold z-30 bg-gradient-to-b from-black/70 to-transparent shrink-0">
-                        <span>14:32</span>
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[8px]">4G</span>
-                            <i class="fa-solid fa-battery-three-quarters text-[9px] text-green-400"></i>
-                        </div>
-                    </div>
-
-                    <!-- FEED AREA FIXED EXACTLY TO SCREEN -->
-                    <div class="relative w-full h-[calc(100%-3.5rem)] overflow-hidden">
-                        <div id="tiktok-feed" class="w-full h-full flex flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar touch-pan-y" style="-webkit-overflow-scrolling: touch;">
-                            <!-- Cards inserted dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- Bottom TikTok Nav -->
-                    <div class="h-9 w-full bg-black/90 backdrop-blur border-t border-neutral-800 flex justify-around items-center text-white z-30 px-1 shrink-0">
-                        <i class="fa-solid fa-house text-xs text-white"></i>
-                        <i class="fa-solid fa-user-group text-xs text-neutral-500"></i>
-                        <div class="w-6 h-4 bg-gradient-to-r from-cyan-400 to-pink-500 rounded p-[1px] flex items-center justify-center">
-                            <div class="w-full h-full bg-white rounded flex items-center justify-center text-black text-[10px] font-bold">+</div>
-                        </div>
-                        <i class="fa-solid fa-message text-xs text-neutral-500"></i>
-                        <i class="fa-solid fa-user text-xs text-neutral-500"></i>
-                    </div>
-
-                </div>
-            </div>
-
-            <button id="hide-btn" class="mt-2 w-full bg-red-600 active:bg-red-700 text-white font-black py-3 px-2 rounded-2xl shadow-xl border-2 border-red-400 flex items-center justify-center gap-2 text-sm sm:text-base">
-                <i class="fa-solid fa-hand text-lg"></i>
-                СПРЯТАТЬ (ПРОБЕЛ)
-            </button>
-        </div>
-
-        <div id="unhide-zone" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 opacity-0 pointer-events-none transition-all duration-200 w-11/12 max-w-xs">
-            <button id="unhide-btn" class="w-full bg-emerald-500 active:bg-emerald-600 text-slate-950 font-black text-base sm:text-lg py-4 px-6 rounded-full shadow-2xl border-4 border-emerald-300 flex items-center justify-center gap-3 animate-bounce">
-                <i class="fa-solid fa-mobile-screen-button text-2xl"></i>
-                ДОСТАТЬ ТЕЛЕФОН
-            </button>
-        </div>
-
-        <!-- START SCREEN OVERLAY -->
-        <div id="start-screen" class="absolute inset-0 bg-slate-950/95 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-4 text-center">
-            <div class="bg-yellow-500 text-black px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest mb-2 transform -rotate-1 shadow-lg">
-                Бесконечная смена
-            </div>
-            <h1 class="text-2xl sm:text-4xl font-black text-white mb-2 tracking-tight">
-                БЕЛАЗ: <span class="text-yellow-400">СМЕНА В ТИКТОКЕ</span>
-            </h1>
-            <p class="text-slate-300 max-w-xs sm:max-w-md text-xs sm:text-base mb-3">
-                Управляй БеЛАЗом, листая ленту! Берегись Первого Отдела в Белой Каске, реагируй на вызовы рации!
-            </p>
-
-            <div class="w-full max-w-xs sm:max-w-md mb-3">
-                <label class="block text-left text-xs text-yellow-400 font-extrabold uppercase mb-1">Твой никнейм водителя:</label>
-                <input type="text" id="player-nickname-input" maxlength="15" placeholder="Работяга №75710" 
-                       class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-center focus:border-yellow-400 focus:outline-none">
-            </div>
-
-            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-3 max-w-xs sm:max-w-md w-full text-left mb-4 space-y-1.5 text-xs">
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-lg bg-yellow-500/20 border border-yellow-500 text-yellow-400 flex items-center justify-center font-bold shrink-0">1</div>
-                    <span>Первый отдел идет — **СПРЯТАТЬ** или Пробел!</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-lg bg-red-500/20 border border-red-500 text-red-400 flex items-center justify-center font-bold shrink-0">2</div>
-                    <span>Остерегайся фальшивых тревог и отвечай по рации!</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-lg bg-green-500/20 border border-green-500 text-green-400 flex items-center justify-center font-bold shrink-0">3</div>
-                    <span>Следи за Планом Выработки!</span>
-                </div>
-            </div>
-
-            <div class="w-full max-w-xs sm:max-w-md space-y-2">
-                <button id="start-btn" class="w-full bg-yellow-500 active:bg-yellow-400 text-black font-black text-lg py-3 rounded-2xl shadow-xl border-b-4 border-yellow-700 uppercase tracking-wider">
-                    НАЧАТЬ СМЕНУ!
-                </button>
-                <button id="open-leaderboard-btn" class="w-full bg-slate-800 active:bg-slate-700 text-yellow-400 border border-yellow-500/50 font-bold py-2.5 rounded-2xl uppercase text-xs flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-trophy text-yellow-400"></i>
-                    ТАБЛИЦА ЛИДЕРОВ
-                </button>
-            </div>
-        </div>
-
-        <!-- GAMEOVER OVERLAY -->
-        <div id="gameover-screen" class="absolute inset-0 bg-red-950/95 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-4 text-center hidden">
-            <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-3xl text-white mb-3 animate-bounce border-4 border-red-400">
-                <i class="fa-solid fa-handcuffs"></i>
-            </div>
-
-            <h2 class="text-2xl sm:text-3xl font-black text-white mb-1">СМЕНА ПРОВАЛЕНА!</h2>
-            <p id="gameover-reason" class="text-red-200 text-xs mb-3 font-semibold">Первый отдел застукал тебя со смартфоном!</p>
-
-            <div class="bg-amber-50 rounded-xl p-4 text-slate-900 max-w-xs sm:max-w-md w-full shadow-2xl border-4 border-amber-200 text-left mb-4 relative rotate-1">
-                <div class="absolute top-3 right-3 border-2 border-red-600 text-red-600 font-black px-2 py-0.5 rounded text-[10px] tracking-widest transform rotate-12 uppercase">
-                    УВОЛЕН
-                </div>
-                <div class="text-center font-extrabold text-sm border-b-2 border-slate-300 pb-2 mb-2">
-                    АКТ О НАРУШЕНИИ ТРУДОВОЙ ДИСЦИПЛИНЫ
-                </div>
-                <div class="text-xs space-y-1.5 font-mono">
-                    <p><strong>Водитель:</strong> <span id="final-player-name">Работяга №75710</span></p>
-                    <p><strong>Причина:</strong> <span id="gameover-cause-text">Первый Отдел (Белая Каска)</span></p>
-                    <p><strong>Продержался:</strong> <span id="final-score" class="font-bold text-red-600">00:00</span></p>
-                    <p><strong>Заработано:</strong> <span id="final-money" class="font-bold text-green-700">0 BYN</span></p>
-                </div>
-            </div>
-
-            <div class="w-full max-w-xs sm:max-w-md space-y-2">
-                <button id="restart-btn" class="w-full bg-white active:bg-slate-200 text-slate-950 font-black text-lg py-3 rounded-2xl shadow-xl border-b-4 border-slate-300 uppercase tracking-wider">
-                    В ГЛАВНОЕ МЕНЮ
-                </button>
-                <button id="gameover-leaderboard-btn" class="w-full bg-slate-900 active:bg-slate-800 text-yellow-400 border border-yellow-500/50 font-bold py-2.5 rounded-2xl uppercase text-xs flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-trophy text-yellow-400"></i>
-                    ТАБЛИЦА ЛИДЕРОВ
-                </button>
-            </div>
-        </div>
-
-        <!-- LEADERBOARD MODAL -->
-        <div id="leaderboard-modal" class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-4 hidden">
-            <div class="bg-slate-900 border-2 border-yellow-500/60 rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-2xl flex flex-col h-[85%] max-h-[550px]">
-                <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-trophy text-yellow-400 text-xl"></i>
-                        <h3 class="text-base sm:text-lg font-black text-white uppercase tracking-wider">ТОП ВОДИТЕЛЕЙ</h3>
-                    </div>
-                    <button id="close-leaderboard-btn" class="w-8 h-8 bg-slate-800 active:bg-slate-700 rounded-full text-slate-400 hover:text-white flex items-center justify-center">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-
-                <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-                    <div class="text-center text-slate-400 text-xs py-8 animate-pulse">Загрузка лучших водителей...</div>
-                </div>
-
-                <div class="mt-3 pt-2 border-t border-slate-800 text-center">
-                    <p class="text-[10px] text-slate-400">Рекорды обновляются в реальном времени из Firebase DB</p>
-                </div>
-            </div>
-        </div>
-
+  <!-- Main HUD Layer -->
+  <div class="hud-layer">
+    <div class="top-bar">
+      <div class="panel title-box interactive">
+        <span>🐟 САУ "ЩУКА-152"</span>
+        <button class="btn-sec" id="btn-bgm">🔊 МУЗЫКА</button>
+      </div>
+      <div id="minimap-card" class="interactive">
+        <canvas id="minimap-canvas"></canvas>
+      </div>
     </div>
 
-    <script>
-        /* FIREBASE INITIALIZATION */
-        const firebaseConfig = {
-          apiKey: "AIzaSyCMOyYDQbKgzrEffWhwmxu2H6NO8VwVrgQ",
-          authDomain: "game-a38b7.firebaseapp.com",
-          databaseURL: "https://game-a38b7-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "game-a38b7",
-          storageBucket: "game-a38b7.firebasestorage.app",
-          messagingSenderId: "228684547222",
-          appId: "1:228684547222:web:a586c6bfd269213ea36eb7"
-        };
+    <!-- Telemetry & Ammo Selection Panel -->
+    <div class="panel interactive" style="align-self: flex-start; max-width: 320px; font-size: 0.85rem;">
+      <div>АЗИМУТ: <span id="tele-azimuth" style="color:#fff;">0°</span> | УГОЛ: <span id="tele-elevation" style="color:#fff;">15°</span></div>
+      <div>ДИСТ. ЦЕЛИ: <span id="tele-dist" style="color:#ffe600;">1200м</span></div>
+      <div style="margin-top: 6px; font-size:0.75rem; color:#ffe600;">ВЫБОР СНАРЯДА:</div>
+      <div class="selector-row">
+        <button class="btn-select active" data-ammo="pike">🐟 ЩУКА</button>
+        <button class="btn-select" data-ammo="catfish">🐱 СОМ-ТЯЖ</button>
+        <button class="btn-select" data-ammo="sardines">🥫 ШПРОТЫ</button>
+        <button class="btn-select" data-ammo="bread">🍞 БАТОН</button>
+      </div>
+    </div>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    <!-- Bottom Controls Container -->
+    <div class="controls-container">
+      <!-- Touch D-Pad Aiming -->
+      <div class="dpad-container interactive">
+        <div></div>
+        <div class="btn-dpad" id="btn-up">▲</div>
+        <div></div>
+        <div class="btn-dpad" id="btn-left">◀</div>
+        <div class="btn-dpad" id="btn-sens" style="font-size:0.7rem; color:#ffe600;">ЧУВСТВ<br>МЕДЛ</div>
+        <div class="btn-dpad" id="btn-right">▶</div>
+        <div></div>
+        <div class="btn-dpad" id="btn-down">▼</div>
+        <div></div>
+      </div>
 
-        /* WEB AUDIO ENGINE */
-        class SoundEffects {
-            constructor() {
-                this.ctx = null;
-                this.muted = false;
-            }
+      <!-- Action Buttons -->
+      <div class="action-panel interactive">
+        <div style="display:flex; gap:6px;">
+          <button class="btn-sec" id="btn-cam">👁️ ПРИЦЕЛ</button>
+          <button class="btn-sec" id="btn-zoom">🔍 ZOOM: 1x</button>
+        </div>
+        <button class="btn-action" id="btn-fire">🔥 ОГОНЬ (ПЛИ!)</button>
+      </div>
+    </div>
+  </div>
 
-            init() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) this.ctx = new AudioCtx();
-                }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-            }
+  <script>
+    // --- Audio Sound Synthesizer (Web Audio API) ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.bgmPlaying = false;
+      }
+      playLaunch() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.4);
+      }
+      playImpact() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.6);
+        gain.gain.setValueAtTime(1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.6);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+      }
+      playQuack() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(150, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+      }
+    }
+    const snd = new SoundEngine();
 
-            playFootsteps() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.12);
-                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.12);
-                } catch(e){}
-            }
+    // --- Game Logic & Scene Setup ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.FogExp2(0x87ceeb, 0.00015);
 
-            playWarning() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-                    osc.frequency.setValueAtTime(900, this.ctx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.2);
-                } catch(e){}
-            }
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 12000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
 
-            playRadioBeep() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
-                    osc.frequency.setValueAtTime(1200, this.ctx.currentTime + 0.15);
-                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.3);
-                } catch(e){}
-            }
+    // Lights
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(2000, 4000, 2000);
+    scene.add(dirLight);
 
-            playBump() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(80, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.35);
-                    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.35);
-                } catch(e){}
-            }
+    // Terrain Creation (10,000m x 10,000m)
+    const mapSize = 10000;
+    const terrGeo = new THREE.PlaneBufferGeometry(mapSize, mapSize, 64, 64);
+    terrGeo.rotateX(-Math.PI / 2);
+    const pos = terrGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      if (Math.abs(x) > 300 || Math.abs(z) > 300) {
+        pos.setY(i, Math.sin(x * 0.002) * Math.cos(z * 0.002) * 120 + Math.sin(x * 0.0005) * 200);
+      }
+    }
+    terrGeo.computeVertexNormals();
+    const terrMat = new THREE.MeshLambertMaterial({ color: 0x4b7832 });
+    const terrain = new THREE.Mesh(terrGeo, terrMat);
+    scene.add(terrain);
 
-            playLoudTikTok() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.4);
-                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.4);
-                } catch(e){}
-            }
+    // Player SPG Model
+    const spgGroup = new THREE.Group();
+    scene.add(spgGroup);
+    // Chassis
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 10), new THREE.MeshLambertMaterial({ color: 0x2e4a21 }));
+    bodyMesh.position.y = 1.25;
+    spgGroup.add(bodyMesh);
+    // Turret & Barrel
+    const turretGroup = new THREE.Group();
+    turretGroup.position.set(0, 2.5, -1);
+    spgGroup.add(turretGroup);
+    const turretMesh = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 6), new THREE.MeshLambertMaterial({ color: 0x3b5e2b }));
+    turretGroup.add(turretMesh);
+    const barrelPivot = new THREE.Group();
+    barrelPivot.position.set(0, 0.3, 2.5);
+    turretGroup.add(barrelPivot);
+    const barrelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 8, 12), new THREE.MeshLambertMaterial({ color: 0x1f3316 }));
+    barrelMesh.rotateX(Math.PI / 2);
+    barrelMesh.position.z = 4;
+    barrelPivot.add(barrelMesh);
 
-            playSwipe() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(250, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.06);
-                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.06);
-                } catch(e){}
-            }
+    // Ammo Models Generator
+    function createPikeMesh() {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.5, 4, 8), new THREE.MeshStandardMaterial({ color: 0x55aa55 }));
+      body.rotateX(Math.PI / 2);
+      g.add(body);
+      return g;
+    }
 
-            playCaught() {
-                if (this.muted || !this.ctx) return;
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.5);
-                    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.5);
-                } catch(e){}
-            }
+    // Targets Array
+    const targets = [];
+    const memeNames = ['ЕЖИК В ТУМАНЕ 🦔', 'КОТ В КОРОБКЕ 🐱', 'БАБУШКА 👵', 'ГУСЬ HONK 🪿', 'ЖИГУЛИ 🚗'];
+    function spawnTargets() {
+      const positions = [
+        { x: 0, z: -1000 }, { x: 300, z: -1600 }, { x: -400, z: -2200 },
+        { x: 800, z: -3000 }, { x: -600, z: -3800 }
+      ];
+      positions.forEach((p, idx) => {
+        const tgt = new THREE.Mesh(new THREE.SphereGeometry(12, 16, 16), new THREE.MeshLambertMaterial({ color: 0xff3333 }));
+        tgt.position.set(p.x, 12, p.z);
+        scene.add(tgt);
+        targets.push({ mesh: tgt, name: memeNames[idx % memeNames.length], hp: 1 });
+      });
+    }
+    spawnTargets();
+
+    // Aiming State
+    let azimuth = 0;
+    let elevation = 15;
+    let selectedAmmo = 'pike';
+    let currentZoom = 1;
+    let cameraMode = 'scope'; // 'scope' or 'fly'
+    let activeShell = null;
+    let sensSpeed = 0.2;
+
+    // Control Inputs
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    // Touch D-Pad setup
+    function setupHoldBtn(id, action) {
+      const el = document.getElementById(id);
+      let timer = null;
+      const start = (e) => { e.preventDefault(); action(); timer = setInterval(action, 30); };
+      const stop = () => clearInterval(timer);
+      el.addEventListener('pointerdown', start);
+      el.addEventListener('pointerup', stop);
+      el.addEventListener('pointerleave', stop);
+    }
+    setupHoldBtn('btn-up', () => elevation = Math.min(75, elevation + sensSpeed));
+    setupHoldBtn('btn-down', () => elevation = Math.max(-3, elevation - sensSpeed));
+    setupHoldBtn('btn-left', () => azimuth -= sensSpeed);
+    setupHoldBtn('btn-right', () => azimuth += sensSpeed);
+
+    document.getElementById('btn-sens').onclick = () => {
+      if (sensSpeed === 0.2) { sensSpeed = 0.05; document.getElementById('btn-sens').innerHTML = "ЧУВСТВ<br>ТОЧНО"; }
+      else { sensSpeed = 0.2; document.getElementById('btn-sens').innerHTML = "ЧУВСТВ<br>МЕДЛ"; }
+    };
+
+    // Ammo Selector Buttons
+    document.querySelectorAll('.btn-select').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.btn-select').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedAmmo = btn.dataset.ammo;
+      };
+    });
+
+    // Firing Mechanics
+    document.getElementById('btn-fire').onclick = () => {
+      if (activeShell) return;
+      snd.playLaunch();
+
+      const shell = createPikeMesh();
+      const muzzlePos = new THREE.Vector3();
+      barrelPivot.getWorldPosition(muzzlePos);
+      shell.position.copy(muzzlePos);
+      scene.add(shell);
+
+      const speed = 260;
+      const radAz = (azimuth * Math.PI) / 180;
+      const radEl = (elevation * Math.PI) / 180;
+      const vel = new THREE.Vector3(
+        Math.sin(radAz) * Math.cos(radEl) * speed,
+        Math.sin(radEl) * speed,
+        -Math.cos(radAz) * Math.cos(radEl) * speed
+      );
+
+      activeShell = { mesh: shell, vel: vel, alive: true };
+      cameraMode = 'fly';
+      document.getElementById('flight-hud').style.display = 'block';
+    };
+
+    // Camera Switch & Zoom
+    document.getElementById('btn-cam').onclick = () => {
+      cameraMode = cameraMode === 'scope' ? 'free' : 'scope';
+      document.getElementById('scope-overlay').style.display = cameraMode === 'scope' ? 'block' : 'none';
+    };
+    document.getElementById('btn-zoom').onclick = () => {
+      if (currentZoom === 1) currentZoom = 2.5;
+      else if (currentZoom === 2.5) currentZoom = 5;
+      else currentZoom = 1;
+      camera.fov = 60 / currentZoom;
+      camera.updateProjectionMatrix();
+      document.getElementById('btn-zoom').innerText = `🔍 ZOOM: ${currentZoom}x`;
+    };
+
+    // Meme Banner Trigger
+    function showMemeBanner(text) {
+      const b = document.getElementById('meme-banner');
+      b.innerText = text;
+      b.classList.add('active');
+      setTimeout(() => b.classList.remove('active'), 2500);
+    }
+
+    // Animation & Physics Loop
+    let lastTime = performance.now();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min((performance.now() - lastTime) / 1000, 0.1);
+      lastTime = performance.now();
+
+      // Keyboard Controls
+      if (keys['KeyW'] || keys['ArrowUp']) elevation = Math.min(75, elevation + sensSpeed);
+      if (keys['KeyS'] || keys['ArrowDown']) elevation = Math.max(-3, elevation - sensSpeed);
+      if (keys['KeyA'] || keys['ArrowLeft']) azimuth -= sensSpeed;
+      if (keys['KeyD'] || keys['ArrowRight']) azimuth += sensSpeed;
+
+      // Update Turret Rotation
+      turretGroup.rotation.y = (-azimuth * Math.PI) / 180;
+      barrelPivot.rotation.x = (-elevation * Math.PI) / 180;
+
+      // Update Active Shell Flight & Controls
+      if (activeShell) {
+        // In-flight steering
+        if (keys['KeyA'] || keys['ArrowLeft']) activeShell.vel.x -= 20 * dt;
+        if (keys['KeyD'] || keys['ArrowRight']) activeShell.vel.x += 20 * dt;
+        if (keys['KeyW'] || keys['ArrowUp']) activeShell.vel.y += 20 * dt;
+        if (keys['KeyS'] || keys['ArrowDown']) activeShell.vel.y -= 20 * dt;
+
+        // Gravity
+        activeShell.vel.y -= 9.81 * 8 * dt;
+        activeShell.mesh.position.addScaledVector(activeShell.vel, dt);
+        activeShell.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), activeShell.vel.clone().normalize());
+
+        // Update Flight Telemetry HUD
+        document.getElementById('flight-alt').innerText = Math.max(0, Math.round(activeShell.mesh.position.y));
+        document.getElementById('flight-dist').innerText = Math.round(activeShell.mesh.position.distanceTo(spgGroup.position));
+
+        // Camera Follow Shell
+        if (cameraMode === 'fly') {
+          const camOffset = activeShell.vel.clone().normalize().multiplyScalar(-30).add(new THREE.Vector3(0, 8, 0));
+          camera.position.copy(activeShell.mesh.position).add(camOffset);
+          camera.lookAt(activeShell.mesh.position);
         }
 
-        const audioFX = new SoundEffects();
-
-        /* TIKTOK MP4 FEED CONTROLLER WITH AUTOMATIC SOUND UNMUTE */
-        const memeAuthors = ['@belaz_king', '@mikhali4_vip', '@rabotyaga777', '@zavod_live', '@minsk_dump', '@heavy_machinery', '@sobol_drives'];
-        const memeAudio = ['оригинальный звук - Михалыч', 'трек - БелАЗ на Базе', 'звук - Карьерный Дрифт', 'ремикс - Соляра и Термос'];
-        const memeDescs = [
-            "Заправил 5000 литров соляры и еду с ветерком! 🚚💨 #белаз #карьер",
-            "Первый отдел в белых касках опять ищет нарушителей, а я чаёк пью ☕🤫",
-            "Михалыч уснул прямо на панели контроллера 😴💤 #работяги",
-            "Колесо высотой 4 метра! Белаз 75710 — сила Беларуси! 🛞💥",
-            "Когда попросили сделать «ещё один рейсик» перед обедом 🥪😅",
-            "Обед по расписанию: колбаса, батон и термосок 🥖☕ #завод",
-            "Как выехать из карьера и не встретить начальника смены? 🛠️",
-            "Дрифт на 450-тонном самосвале! Подпишись! 🔥🎯"
-        ];
-
-        let availableVideos = [];
-        let loadedTikTokCount = 0;
-        let lastPlayedIndex = -1;
-        let isVideoSoundUnmuted = false;
-        let scanCompleted = false;
-        let videoIntersectionObserver = null;
-
-        function enableVideoAudio() {
-            if (!isVideoSoundUnmuted) {
-                isVideoSoundUnmuted = true;
-                const visibleCard = getCurrentlyVisibleTikTokCard();
-                if (visibleCard) {
-                    const video = visibleCard.querySelector('video');
-                    if (video) {
-                        video.muted = false;
-                        video.play().catch(()=>{});
-                    }
-                }
-            }
-        }
-
-        async function scanTikTokVideos() {
-            const maxVideos = 500;
-            const validVideos = [];
-            
-            const checkVideo = (src) => {
-                return new Promise((resolve) => {
-                    const video = document.createElement('video');
-                    video.onloadedmetadata = () => resolve(src);
-                    video.onerror = () => resolve(null);
-                    video.src = src;
-                });
-            };
-
-            const checks = [];
-            for (let i = 1; i <= maxVideos; i++) {
-                checks.push(checkVideo(`tiktok${i}.mp4`));
-            }
-
-            const results = await Promise.all(checks);
-            for (const res of results) {
-                if (res) validVideos.push(res);
-            }
-
-            if (validVideos.length > 0) {
-                availableVideos = validVideos;
-            } else {
-                availableVideos = ['tiktok1.mp4'];
-            }
-            scanCompleted = true;
-        }
-
-        const scanPromise = scanTikTokVideos();
-
-        function initVideoObserver() {
-            if (videoIntersectionObserver) videoIntersectionObserver.disconnect();
-
-            videoIntersectionObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const video = entry.target.querySelector('video');
-                    if (!video) return;
-
-                    if (entry.isIntersecting && gameState.isPhoneVisible) {
-                        video.muted = !isVideoSoundUnmuted;
-                        video.play().catch(()=>{});
-                    } else {
-                        video.pause();
-                        video.muted = true;
-                    }
-                });
-            }, {
-                root: document.getElementById('tiktok-feed'),
-                threshold: 0.6
-            });
-        }
-
-        function getRandomVideoSrc() {
-            if (availableVideos.length === 0) return 'tiktok1.mp4';
-            if (availableVideos.length === 1) return availableVideos[0];
-
-            let randIdx = Math.floor(Math.random() * availableVideos.length);
-            while (randIdx === lastPlayedIndex) {
-                randIdx = Math.floor(Math.random() * availableVideos.length);
-            }
-            lastPlayedIndex = randIdx;
-            return availableVideos[randIdx];
-        }
-
-        function createTikTokCard() {
-            loadedTikTokCount++;
-            const author = memeAuthors[Math.floor(Math.random() * memeAuthors.length)];
-            const audioTrack = memeAudio[Math.floor(Math.random() * memeAudio.length)];
-            const desc = memeDescs[Math.floor(Math.random() * memeDescs.length)];
-            const isLoud = Math.random() < 0.15;
-            const isDouble = Math.random() < 0.20;
-
-            const videoSrc = getRandomVideoSrc();
-
-            const card = document.createElement('div');
-            card.className = `tiktok-card relative w-full h-full bg-black rounded-xl flex flex-col justify-between overflow-hidden snap-start shrink-0 ${isLoud ? 'border-4 border-red-500' : ''}`;
-            
-            card.setAttribute('data-loud', isLoud ? 'true' : 'false');
-            card.setAttribute('data-double', isDouble ? 'true' : 'false');
-
-            card.innerHTML = `
-                <div class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden pointer-events-none">
-                    <video class="tiktok-video-el w-full h-full object-cover" loop ${isVideoSoundUnmuted ? '' : 'muted'} playsinline>
-                        <source src="${videoSrc}" type="video/mp4">
-                    </video>
-                </div>
-
-                <div class="relative z-10 flex items-center justify-between p-2 sm:p-3 pointer-events-none">
-                    <span class="bg-black/60 backdrop-blur px-2 py-0.5 rounded-full text-[9px] font-bold">РЕКОМЕНДАЦИИ #${loadedTikTokCount}</span>
-                    ${isDouble ? '<span class="bg-yellow-400 text-black px-2 py-0.5 rounded-full text-[9px] font-black animate-pulse">🔥 x2 BYN!</span>' : ''}
-                    ${isLoud ? '<span class="bg-red-600 text-white px-2 py-0.5 rounded-full text-[9px] font-black animate-bounce">🔊 ГРОМКИЙ ЗВУК!</span>' : ''}
-                </div>
-
-                <div class="absolute right-2 bottom-10 z-20 flex flex-col items-center gap-3">
-                    <div class="w-7 h-7 rounded-full border-2 border-white bg-slate-800 flex items-center justify-center text-xs font-bold text-yellow-400">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <button class="like-btn w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white hover:text-red-500 text-sm active:scale-125 transition-transform">
-                            <i class="fa-solid fa-heart"></i>
-                        </button>
-                        <span class="text-[9px] font-bold mt-0.5">${(Math.random() * 80 + 5).toFixed(1)}K</span>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <button class="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white text-sm">
-                            <i class="fa-solid fa-comment-dots"></i>
-                        </button>
-                        <span class="text-[9px] font-bold mt-0.5">${(Math.random() * 20 + 1).toFixed(1)}K</span>
-                    </div>
-                    <div class="w-7 h-7 bg-black/60 rounded-full flex items-center justify-center border border-white/20 animate-spin-disc">
-                        <i class="fa-solid fa-compact-disc text-amber-400 text-xs"></i>
-                    </div>
-                </div>
-
-                <div class="relative z-10 p-2 sm:p-3 max-w-[80%] pointer-events-none">
-                    <div class="font-extrabold text-xs mb-0.5 text-yellow-300 drop-shadow">${author}</div>
-                    <p class="text-[10px] text-slate-100 leading-snug line-clamp-2 mb-1 drop-shadow">${desc}</p>
-                    <div class="flex items-center gap-1.5 text-[8px] text-slate-300 font-semibold">
-                        <i class="fa-solid fa-music text-yellow-400 animate-pulse"></i>
-                        <span class="truncate">${audioTrack}</span>
-                    </div>
-                </div>
-            `;
-
-            const likeBtn = card.querySelector('.like-btn');
-            likeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                enableVideoAudio();
-                likeBtn.classList.add('text-red-500');
-                audioFX.playSwipe();
-                
-                const heart = document.createElement('div');
-                heart.className = 'floating-heart fa-solid fa-heart';
-                heart.style.left = `${e.clientX - 20}px`;
-                heart.style.top = `${e.clientY - 20}px`;
-                document.body.appendChild(heart);
-                setTimeout(() => heart.remove(), 800);
-            });
-
-            if (videoIntersectionObserver) {
-                videoIntersectionObserver.observe(card);
-            }
-
-            return card;
-        }
-
-        function appendMoreTikToks(count = 4) {
-            for (let i = 0; i < count; i++) {
-                tiktokFeed.appendChild(createTikTokCard());
-            }
-        }
-
-        /* GAME STATE */
-        let gameState = {
-            isRunning: false,
-            isPhoneVisible: true,
-            scoreSeconds: 0,
-            moneyEarned: 0,
-            level: 1,
-            productivity: 100,
-            playerName: "Работяга №75710",
-            bossApproaching: false,
-            bossArrived: false,
-            isFakeAlarm: false,
-            radioActive: false,
-            bossTimer: null,
-            warningTimer: null,
-            radioTimer: null,
-            scoreInterval: null,
-            randomEventsInterval: null
-        };
-
-        const phoneWrapper = document.getElementById('phone-wrapper');
-        const unhideZone = document.getElementById('unhide-zone');
-        const handsOnWheel = document.getElementById('hands-on-wheel');
-        const warningBox = document.getElementById('warning-box');
-        const warningTitle = document.getElementById('warning-title');
-        const warningText = document.getElementById('warning-text');
-        const bossCharacter = document.getElementById('boss-character');
-        const fakePasserby = document.getElementById('fake-passerby');
-        const scoreDisplay = document.getElementById('score-display');
-        const moneyDisplay = document.getElementById('money-display');
-        const levelDisplay = document.getElementById('level-display');
-        const productivityBar = document.getElementById('productivity-bar');
-        const productivityLabel = document.getElementById('productivity-label');
-        const workerBubble = document.getElementById('worker-bubble');
-        const workerText = document.getElementById('worker-text');
-        const tiktokFeed = document.getElementById('tiktok-feed');
-        const startScreen = document.getElementById('start-screen');
-        const gameoverScreen = document.getElementById('gameover-screen');
-        const finalScore = document.getElementById('final-score');
-        const finalMoney = document.getElementById('final-money');
-        const finalPlayerName = document.getElementById('final-player-name');
-        const gameoverReason = document.getElementById('gameover-reason');
-        const gameoverCauseText = document.getElementById('gameover-cause-text');
-        const radioBtn = document.getElementById('radio-btn');
-        const radioIcon = document.getElementById('radio-icon');
-        const radioText = document.getElementById('radio-text');
-        const mobileRadioContainer = document.getElementById('mobile-radio-container');
-        const playerNameInput = document.getElementById('player-nickname-input');
-        const leaderboardModal = document.getElementById('leaderboard-modal');
-        const leaderboardList = document.getElementById('leaderboard-list');
-
-        // Restore saved player nickname
-        const savedName = localStorage.getItem('belaz_player_name');
-        if (savedName) {
-            playerNameInput.value = savedName;
-        }
-
-        function triggerVibration(pattern) {
-            if ("vibrate" in navigator) {
-                try { navigator.vibrate(pattern); } catch(e){}
-            }
-        }
-
-        function resetBossAndState() {
-            clearTimeout(gameState.bossTimer);
-            clearTimeout(gameState.warningTimer);
-            clearTimeout(gameState.radioTimer);
-
-            gameState.bossApproaching = false;
-            gameState.bossArrived = false;
-            gameState.isFakeAlarm = false;
-
-            bossCharacter.classList.add('translate-y-full');
-            fakePasserby.classList.add('translate-y-full');
-            
-            warningBox.classList.add('opacity-0', 'scale-90');
-            warningBox.classList.remove('opacity-100', 'scale-100');
-            document.getElementById('cabin-viewport').classList.remove('shake', 'bump-anim');
-        }
-
-        function returnToMainMenu() {
-            gameState.isRunning = false;
-            pauseAllVideos();
-            resetBossAndState();
-
-            clearTimeout(gameState.bossTimer);
-            clearTimeout(gameState.warningTimer);
-            clearTimeout(gameState.radioTimer);
-            clearInterval(gameState.scoreInterval);
-            clearInterval(gameState.randomEventsInterval);
-
-            gameoverScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            audioFX.playSwipe();
-        }
-
-        async function startGame() {
-            const inputVal = playerNameInput.value.trim();
-            gameState.playerName = inputVal !== '' ? inputVal : "Работяга №75710";
-            localStorage.setItem('belaz_player_name', gameState.playerName);
-
-            audioFX.init();
-            enableVideoAudio();
-            
-            if (!scanCompleted) {
-                await scanPromise;
-            }
-
-            resetBossAndState();
-
-            gameState.isRunning = true;
-            gameState.scoreSeconds = 0;
-            gameState.moneyEarned = 0;
-            gameState.level = 1;
-            gameState.productivity = 100;
-
-            scoreDisplay.innerText = "00:00";
-            moneyDisplay.innerText = "0 BYN";
-            levelDisplay.innerText = "Ур. 1";
-
-            startScreen.classList.add('hidden');
-            gameoverScreen.classList.add('hidden');
-
-            tiktokFeed.innerHTML = '';
-            loadedTikTokCount = 0;
-            lastPlayedIndex = -1;
-            
-            initVideoObserver();
-            appendMoreTikToks(6);
-
-            showPhone();
-            resetRadioState();
-
-            clearInterval(gameState.scoreInterval);
-            clearInterval(gameState.randomEventsInterval);
-
-            gameState.scoreInterval = setInterval(updateScoreAndDifficulty, 1000);
-            gameState.randomEventsInterval = setInterval(handleRandomEvents, 5000);
-            
-            scheduleNextBossVisit();
-        }
-
-        function updateScoreAndDifficulty() {
-            if (!gameState.isRunning) return;
-            gameState.scoreSeconds++;
-
-            const mins = Math.floor(gameState.scoreSeconds / 60).toString().padStart(2, '0');
-            const secs = (gameState.scoreSeconds % 60).toString().padStart(2, '0');
-            scoreDisplay.innerText = `${mins}:${secs}`;
-
-            gameState.level = Math.floor(gameState.scoreSeconds / 20) + 1;
-            levelDisplay.innerText = `Ур. ${gameState.level}`;
-
-            if (!gameState.isPhoneVisible) {
-                gameState.productivity = Math.max(0, gameState.productivity - 4);
-                if (gameState.productivity < 30) {
-                    showWorkerPhrase("Эй! План стоит! Доставай сотовый личико поднять!", true);
-                }
-                if (gameState.productivity <= 0) {
-                    gameOver("Провален план выработки! Тебя уволили за безделье!", "Нулевая производительность");
-                    return;
-                }
-            } else {
-                gameState.productivity = Math.min(100, gameState.productivity + 2);
-                
-                const visibleCard = getCurrentlyVisibleTikTokCard();
-                let multiplier = 1;
-                if (visibleCard && visibleCard.getAttribute('data-double') === 'true') {
-                    multiplier = 2;
-                }
-                gameState.moneyEarned += (Math.floor(Math.random() * 3) + 2) * multiplier;
-                moneyDisplay.innerText = `${gameState.moneyEarned} BYN`;
-
-                if (visibleCard && visibleCard.getAttribute('data-loud') === 'true' && Math.random() < 0.2) {
-                    audioFX.playLoudTikTok();
-                    showWorkerPhrase("Тише! Динамик зарипел на всю кабину!", true);
-                }
-            }
-
-            productivityBar.style.width = `${gameState.productivity}%`;
-            productivityLabel.innerText = `План Выработки: ${gameState.productivity}%`;
-        }
-
-        function getCurrentlyVisibleTikTokCard() {
-            const cards = document.querySelectorAll('.tiktok-card');
-            for (let card of cards) {
-                const rect = card.getBoundingClientRect();
-                const feedRect = tiktokFeed.getBoundingClientRect();
-                if (rect.top >= feedRect.top - 20 && rect.bottom <= feedRect.bottom + 20) {
-                    return card;
-                }
-            }
-            return null;
-        }
-
-        function pauseAllVideos() {
-            const videos = document.querySelectorAll('.tiktok-video-el');
-            videos.forEach(v => {
-                v.pause();
-            });
-        }
-
-        function resumeActiveVideo() {
-            const visibleCard = getCurrentlyVisibleTikTokCard();
-            if (visibleCard) {
-                const video = visibleCard.querySelector('video');
-                if (video) {
-                    video.muted = !isVideoSoundUnmuted;
-                    video.play().catch(()=>{});
-                }
-            }
-        }
-
-        function hidePhone() {
-            if (!gameState.isRunning) return;
-            gameState.isPhoneVisible = false;
-
-            phoneWrapper.classList.remove('phone-visible');
-            phoneWrapper.classList.add('phone-hidden');
-            
-            unhideZone.classList.remove('opacity-0', 'pointer-events-none');
-            handsOnWheel.classList.remove('opacity-0');
-
-            pauseAllVideos();
-            audioFX.playSwipe();
-            triggerVibration(30);
-        }
-
-        function showPhone() {
-            if (!gameState.isRunning) return;
-            enableVideoAudio();
-            gameState.isPhoneVisible = true;
-
-            phoneWrapper.classList.remove('phone-hidden');
-            phoneWrapper.classList.add('phone-visible');
-
-            unhideZone.classList.add('opacity-0', 'pointer-events-none');
-            handsOnWheel.classList.add('opacity-0');
-
-            resumeActiveVideo();
-            audioFX.playSwipe();
-            triggerVibration(30);
-        }
-
-        function scheduleNextBossVisit() {
-            if (!gameState.isRunning) return;
-            const baseDelay = Math.max(2500, 7000 - gameState.level * 600);
-            const randomDelay = Math.floor(Math.random() * 3000) + baseDelay;
-
-            gameState.bossTimer = setTimeout(() => {
-                if (Math.random() < 0.3) {
-                    triggerFakeAlarm();
-                } else {
-                    triggerBossWarning();
-                }
-            }, randomDelay);
-        }
-
-        function triggerFakeAlarm() {
-            if (!gameState.isRunning) return;
-            gameState.isFakeAlarm = true;
-
-            warningTitle.innerText = "ШУМ ЗА ОКНОМ?";
-            warningText.innerText = "КТО-ТО ИДЕТ...";
-            warningBox.classList.remove('opacity-0', 'scale-90', 'bg-red-950/95');
-            warningBox.classList.add('opacity-100', 'scale-100', 'bg-amber-950/95');
-
-            audioFX.playFootsteps();
-            fakePasserby.classList.remove('translate-y-full');
-            showWorkerPhrase("Кажется, это просто Вася из цеха прошёл...", false);
-
-            setTimeout(() => {
-                fakePasserby.classList.add('translate-y-full');
-                warningBox.classList.add('opacity-0', 'scale-90');
-                warningBox.classList.remove('opacity-100', 'scale-100');
-                gameState.isFakeAlarm = false;
-                scheduleNextBossVisit();
-            }, 1800);
-        }
-
-        function triggerBossWarning() {
-            if (!gameState.isRunning) return;
-            gameState.bossApproaching = true;
-
-            warningTitle.innerText = "ОПАСНОСТЬ!";
-            warningText.innerText = "ПЕРВЫЙ ОТДЕЛ!";
-            warningBox.classList.remove('opacity-0', 'scale-90', 'bg-amber-950/95');
-            warningBox.classList.add('opacity-100', 'scale-100', 'bg-red-950/95');
-
-            audioFX.playWarning();
-            triggerVibration([100, 50, 100, 50, 100]);
-
-            let stepsCount = 0;
-            const stepsInterval = setInterval(() => {
-                if (!gameState.bossApproaching) {
-                    clearInterval(stepsInterval);
-                    return;
-                }
-                audioFX.playFootsteps();
-                stepsCount++;
-                if (stepsCount >= 3) clearInterval(stepsInterval);
-            }, 350);
-
-            document.getElementById('cabin-viewport').classList.add('shake');
-            showWorkerPhrase("БЕЛАЯ КАСКА НА ЛЕСТНИЦЕ! СПРЯЧЬ ТЕЛЕФОН!", true);
-
-            const reactionWindow = Math.max(800, 2000 - gameState.level * 180);
-
-            gameState.warningTimer = setTimeout(() => {
-                triggerBossArrive();
-            }, reactionWindow);
-        }
-
-        function triggerBossArrive() {
-            if (!gameState.isRunning) return;
-            gameState.bossArrived = true;
-            document.getElementById('cabin-viewport').classList.remove('shake');
-
-            bossCharacter.classList.remove('translate-y-full');
-
-            setTimeout(() => {
-                if (gameState.isPhoneVisible) {
-                    gameOver("Инспектор в белой каске засек тебя со смартфоном!", "Первый Отдел (Белая Каска)");
-                } else {
-                    setTimeout(() => {
-                        bossLeaves();
-                    }, 1400);
-                }
-            }, 200);
-        }
-
-        function bossLeaves() {
-            bossCharacter.classList.add('translate-y-full');
-            warningBox.classList.add('opacity-0', 'scale-90');
-            warningBox.classList.remove('opacity-100', 'scale-100');
-
-            gameState.bossApproaching = false;
-            gameState.bossArrived = false;
-
-            scheduleNextBossVisit();
-        }
-
-        function handleRandomEvents() {
-            if (!gameState.isRunning || gameState.bossApproaching) return;
-
-            const rand = Math.random();
-            if (rand < 0.25) {
-                const viewport = document.getElementById('cabin-viewport');
-                viewport.classList.add('bump-anim');
-                audioFX.playBump();
-                triggerVibration(150);
-                showWorkerPhrase("ОГО! Наехал на огромный булыжник!", true);
-
-                setTimeout(() => viewport.classList.remove('bump-anim'), 500);
-            } else if (rand > 0.70 && !gameState.radioActive) {
-                triggerRadioCall();
-            }
-        }
-
-        function triggerRadioCall() {
-            gameState.radioActive = true;
-            audioFX.playRadioBeep();
-            
-            radioIcon.className = "fa-solid fa-walkie-talkie text-red-500 animate-ping text-xs";
-            radioText.innerText = "ВЫЗОВ ДИСПЕТЧЕРА!";
-            radioBtn.className = "pointer-events-auto h-9 bg-red-900 border-2 border-yellow-400 rounded-lg flex items-center justify-around px-2 animate-bounce";
-
-            mobileRadioContainer.classList.remove('opacity-0', 'pointer-events-none');
-            showWorkerPhrase("Диспетчер вызываeт по рации! Жми кнопку!", true);
-
-            gameState.radioTimer = setTimeout(() => {
-                if (gameState.radioActive && gameState.isRunning) {
-                    gameOver("Ты проигнорировал вызов диспетчера! Вызвана проверка!", "Игнорирование рации");
-                }
-            }, 3500);
-        }
-
-        function answerRadio() {
-            if (!gameState.radioActive) return;
-            gameState.radioActive = false;
-            clearTimeout(gameState.radioTimer);
-
-            resetRadioState();
-            showWorkerPhrase("Доложил: «Всё в норме, везу соляру!»", false);
-            audioFX.playSwipe();
-        }
-
-        function resetRadioState() {
-            radioIcon.className = "fa-solid fa-walkie-talkie text-slate-500 text-xs";
-            radioText.innerText = "РАЦИЯ МОЛЧИТ";
-            radioBtn.className = "pointer-events-auto h-9 bg-neutral-900 border-2 border-red-900 rounded-lg flex items-center justify-around px-2";
-            mobileRadioContainer.classList.add('opacity-0', 'pointer-events-none');
-        }
-
-        function showWorkerPhrase(text, urgent = false) {
-            workerText.innerText = text;
-            if (urgent) {
-                workerBubble.style.borderColor = "#dc2626";
-            } else {
-                workerBubble.style.borderColor = "#000000";
-            }
-            workerBubble.classList.remove('opacity-0');
-            setTimeout(() => {
-                workerBubble.classList.add('opacity-0');
-            }, 2800);
-        }
-
-        function gameOver(reasonText, causeText) {
-            gameState.isRunning = false;
-            pauseAllVideos();
-            audioFX.playCaught();
-            triggerVibration([300, 100, 300]);
-
-            clearTimeout(gameState.bossTimer);
-            clearTimeout(gameState.warningTimer);
-            clearTimeout(gameState.radioTimer);
-            clearInterval(gameState.scoreInterval);
-            clearInterval(gameState.randomEventsInterval);
-
-            const mins = Math.floor(gameState.scoreSeconds / 60).toString().padStart(2, '0');
-            const secs = (gameState.scoreSeconds % 60).toString().padStart(2, '0');
-            
-            finalPlayerName.innerText = gameState.playerName;
-            finalScore.innerText = `${mins}:${secs}`;
-            finalMoney.innerText = `${gameState.moneyEarned} BYN`;
-            gameoverReason.innerText = reasonText;
-            gameoverCauseText.innerText = causeText;
-
-            gameoverScreen.classList.remove('hidden');
-
-            saveLeaderboardScore(gameState.playerName, gameState.scoreSeconds, gameState.moneyEarned);
-        }
-
-        /* LEADERBOARD FIREBASE API - UNIQUE NICKNAMES ONLY & AUTO-CLEANUP */
-        function saveLeaderboardScore(name, seconds, money) {
-            if (seconds <= 0) return;
-            
-            const leaderboardRef = db.ref('leaderboard');
-            
-            leaderboardRef.orderByChild('name').equalTo(name).once('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    let bestKey = null;
-                    let bestScore = -1;
-                    const keysToRemove = [];
-
-                    snapshot.forEach((child) => {
-                        const score = child.val().seconds || 0;
-                        if (score > bestScore) {
-                            if (bestKey) keysToRemove.push(bestKey);
-                            bestScore = score;
-                            bestKey = child.key;
-                        } else {
-                            keysToRemove.push(child.key);
-                        }
-                    });
-
-                    // Delete extra duplicates if any existed
-                    keysToRemove.forEach(k => leaderboardRef.child(k).remove());
-
-                    // Update existing record if new score is higher
-                    if (seconds > bestScore) {
-                        leaderboardRef.child(bestKey).update({
-                            seconds: seconds,
-                            money: money,
-                            timestamp: Date.now()
-                        });
-                    }
-                } else {
-                    // Create new entry
-                    const newRecordRef = leaderboardRef.push();
-                    newRecordRef.set({
-                        name: name,
-                        seconds: seconds,
-                        money: money,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
-
-        function loadLeaderboard() {
-            leaderboardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8 animate-pulse">Загрузка лучших водителей...</div>';
-            
-            db.ref('leaderboard')
-              .once('value', (snapshot) => {
-                  const uniqueRecordsMap = new Map();
-                  const duplicatesToDelete = [];
-
-                  snapshot.forEach((child) => {
-                      const data = child.val();
-                      const name = data.name || 'Работяга';
-                      const key = child.key;
-
-                      if (!uniqueRecordsMap.has(name)) {
-                          uniqueRecordsMap.set(name, { ...data, key: key });
-                      } else {
-                          const existing = uniqueRecordsMap.get(name);
-                          if ((data.seconds || 0) > (existing.seconds || 0)) {
-                              duplicatesToDelete.push(existing.key);
-                              uniqueRecordsMap.set(name, { ...data, key: key });
-                          } else {
-                              duplicatesToDelete.push(key);
-                          }
-                      }
-                  });
-
-                  // Automatically remove all old duplicate records from Firebase
-                  duplicatesToDelete.forEach(k => db.ref('leaderboard').child(k).remove());
-
-                  const records = Array.from(uniqueRecordsMap.values());
-                  records.sort((a, b) => b.seconds - a.seconds);
-
-                  const topRecords = records.slice(0, 10);
-
-                  if (topRecords.length === 0) {
-                      leaderboardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8">Пока нет сохраненных рекордов. Будь первым!</div>';
-                      return;
-                  }
-
-                  let html = '';
-                  topRecords.forEach((rec, idx) => {
-                      const mins = Math.floor(rec.seconds / 60).toString().padStart(2, '0');
-                      const secs = (rec.seconds % 60).toString().padStart(2, '0');
-                      
-                      let medal = `#${idx + 1}`;
-                      let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
-                      
-                      if (idx === 0) {
-                          medal = '🥇 1';
-                          badgeColor = "bg-yellow-500/20 text-yellow-300 border-yellow-500/60 font-black";
-                      } else if (idx === 1) {
-                          medal = '🥈 2';
-                          badgeColor = "bg-slate-300/20 text-slate-200 border-slate-400/60 font-black";
-                      } else if (idx === 2) {
-                          medal = '🥉 3';
-                          badgeColor = "bg-amber-600/20 text-amber-400 border-amber-600/60 font-black";
-                      }
-
-                      html += `
-                          <div class="flex items-center justify-between p-2.5 rounded-2xl border ${badgeColor} backdrop-blur">
-                              <div class="flex items-center gap-2.5 overflow-hidden">
-                                  <span class="text-xs font-black w-7 shrink-0 text-center">${medal}</span>
-                                  <span class="text-xs sm:text-sm font-bold truncate text-white">${rec.name || 'Работяга'}</span>
-                              </div>
-                              <div class="flex items-center gap-3 shrink-0 text-right">
-                                  <div>
-                                      <div class="text-[9px] text-slate-400">СМЕНА</div>
-                                      <div class="text-xs font-black pixel-font text-yellow-400">${mins}:${secs}</div>
-                                  </div>
-                                  <div>
-                                      <div class="text-[9px] text-slate-400">ЗП</div>
-                                      <div class="text-xs font-black text-green-400">${rec.money || 0} BYN</div>
-                                  </div>
-                              </div>
-                          </div>
-                      `;
-                  });
-
-                  leaderboardList.innerHTML = html;
-              });
-        }
-
-        function showLeaderboard() {
-            loadLeaderboard();
-            leaderboardModal.classList.remove('hidden');
-        }
-
-        function hideLeaderboard() {
-            leaderboardModal.classList.add('hidden');
-        }
-
-        function bindTouch(element, callback) {
-            let touched = false;
-            element.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                touched = true;
-                callback(e);
-            }, { passive: false });
-
-            element.addEventListener('click', (e) => {
-                if (touched) {
-                    touched = false;
-                    return;
-                }
-                callback(e);
-            });
-        }
-
-        bindTouch(document.getElementById('hide-btn'), hidePhone);
-        bindTouch(document.getElementById('unhide-btn'), showPhone);
-        bindTouch(document.getElementById('start-btn'), startGame);
-        bindTouch(document.getElementById('restart-btn'), returnToMainMenu);
-        bindTouch(radioBtn, answerRadio);
-        bindTouch(document.getElementById('mobile-radio-btn'), answerRadio);
-
-        bindTouch(document.getElementById('open-leaderboard-btn'), showLeaderboard);
-        bindTouch(document.getElementById('gameover-leaderboard-btn'), showLeaderboard);
-        bindTouch(document.getElementById('close-leaderboard-btn'), hideLeaderboard);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (gameState.isPhoneVisible) hidePhone(); else showPhone();
-            } else if (e.code === 'KeyR') {
-                answerRadio();
-            }
+        // Collision Check (Targets & Ground)
+        targets.forEach(t => {
+          if (t.hp > 0 && activeShell.mesh.position.distanceTo(t.mesh.position) < 20) {
+            t.hp = 0;
+            scene.remove(t.mesh);
+            snd.playImpact();
+            showMemeBanner(`УНИЧТОЖЕН: ${t.name}! 💥`);
+            removeShell();
+          }
         });
 
-        const soundBtn = document.getElementById('sound-btn');
-        bindTouch(soundBtn, () => {
-            audioFX.muted = !audioFX.muted;
-            soundBtn.innerHTML = audioFX.muted ? 
-                '<i class="fa-solid fa-volume-xmark text-base text-red-400"></i>' : 
-                '<i class="fa-solid fa-volume-high text-base"></i>';
-        });
+        if (activeShell && activeShell.mesh.position.y <= 1) {
+          snd.playQuack();
+          showMemeBanner('БУЛЬК! ПРЯМО В ГРЯЗЬ! 💦');
+          removeShell();
+        }
+      } else {
+        // Scope Camera View
+        if (cameraMode === 'scope') {
+          const scopePos = new THREE.Vector3();
+          barrelPivot.getWorldPosition(scopePos);
+          camera.position.copy(scopePos).add(new THREE.Vector3(0, 1.2, 0));
+          const targetLook = new THREE.Vector3(0, 0, -100)
+            .applyAxisAngle(new THREE.Vector3(1, 0, 0), barrelPivot.rotation.x)
+            .applyAxisAngle(new THREE.Vector3(0, 1, 0), turretGroup.rotation.y)
+            .add(scopePos);
+          camera.lookAt(targetLook);
+        }
+      }
 
-        tiktokFeed.addEventListener('scroll', () => {
-            enableVideoAudio();
-            audioFX.playSwipe();
-            if (tiktokFeed.scrollTop + tiktokFeed.clientHeight >= tiktokFeed.scrollHeight - 200) {
-                appendMoreTikToks(4);
-            }
-        }, { passive: true });
+      // Update Telemetry Panel
+      document.getElementById('tele-azimuth').innerText = `${Math.round(azimuth)}°`;
+      document.getElementById('tele-elevation').innerText = `${Math.round(elevation)}°`;
 
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', (event) => {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
+      renderer.render(scene, camera);
+    }
 
-    </script>
+    function removeShell() {
+      if (activeShell) {
+        scene.remove(activeShell.mesh);
+        activeShell = null;
+        document.getElementById('flight-hud').style.display = 'none';
+        setTimeout(() => cameraMode = 'scope', 1200);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
 </body>
 </html>
